@@ -1,0 +1,2 @@
+example:
+  image: quay.io/kubevirt/macvtap-cni:latest
