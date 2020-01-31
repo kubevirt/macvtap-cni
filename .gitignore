@@ -1,0 +1,11 @@
+# Makefile targets
+goimports-check
+goimports-format
+whitespace-check
+whitespace-format
+
+# Local kubevirtci cluster
+_kubevirtci/
+
+# Temporary built files
+_out/
