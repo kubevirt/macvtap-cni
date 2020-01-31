@@ -3,10 +3,21 @@ module github.com/kubevirt/macvtap-cni
 go 1.13
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/client9/misspell v0.3.4 // indirect
+	github.com/containernetworking/plugins v0.8.5
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/kubevirt/device-plugin-manager v1.14.0
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
+	github.com/vishvananda/netlink v1.1.0
+	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3 // indirect
+	golang.org/x/net v0.0.0-20190812203447-cdfb69ac37fc
 	golang.org/x/tools v0.0.0-20200117220505-0cba7a3a9ee9
-	k8s.io/client-go v0.0.0-00010101000000-000000000000
+	google.golang.org/grpc v1.26.0
+	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc // indirect
+	k8s.io/client-go v0.0.0
+	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
 )
 
 // Pinned to kubernetes-1.15.4
@@ -28,6 +39,7 @@ replace (
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.0.0-20190918202429-08c8357f8e2d
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.0.0-20190918202713-c34a54b3ec8e
 	k8s.io/kubelet => k8s.io/kubelet v0.0.0-20190918202550-958285cf3eef
+	k8s.io/kubernetes => k8s.io/kubernetes v1.15.4
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20190918203421-225f0541b3ea
 	k8s.io/metrics => k8s.io/metrics v0.0.0-20190918202012-3c1ca76f5bda
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190918201353-5cc279503896

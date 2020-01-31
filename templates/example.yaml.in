@@ -1,2 +1,0 @@
-example:
-  image: {{ .ImageRegistry }}/{{ .ImageName }}:{{ .ImageTag }}

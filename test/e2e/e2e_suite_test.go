@@ -30,7 +30,7 @@ var clientset *kubernetes.Clientset
 
 func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "macvtap e2e suite", reporters)
+	RunSpecs(t, "macvtap e2e suite")
 }
 
 var _ = BeforeSuite(func() {
