@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-export KUBEVIRT_PROVIDER='k8s-1.14.6'
+
+export KUBEVIRT_PROVIDER="${KUBEVIRT_PROVIDER:-k8s-multus-1.13.3}"
 
 KUBEVIRTCI_VERSION='0e5b027098796137a9b95aed57943061e185bfcd'
 KUBEVIRTCI_PATH="${PWD}/_kubevirtci"
