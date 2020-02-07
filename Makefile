@@ -6,7 +6,8 @@ TARGETS = \
 	goimports-format \
 	goimports-check \
 	whitespace-format \
-	whitespace-check
+	whitespace-check \
+	vet
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
@@ -15,9 +16,11 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 directories := $(filter-out ./ ./vendor/ ,$(sort $(dir $(wildcard ./*/))))
 all_sources=$(call rwildcard,$(directories),*) $(filter-out $(TARGETS), $(wildcard *))
 
+.ONESHELL:
+
 all: format check
 
-check: goimports-check whitespace-check test/unit
+check: goimports-check whitespace-check vet test/unit
 
 format: goimports-format whitespace-format
 
@@ -37,8 +40,12 @@ whitespace-format: $(all_sources)
 	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./test
 	touch $@
 
+vet: $(all_sources)
+	go vet ./pkg/... ./cmd/... ./test/...
+	touch $@
+
 docker-build:
-	docker build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ./cmd
+	docker build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
 
 docker-push:
 	docker push ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
@@ -56,7 +63,11 @@ test/e2e:
 	./hack/functest.sh
 
 test/unit:
-	go test ./cmd/... ./pkg/... -v --ginkgo.v
+	@if ! [ "$$(id -u)" = 0 ]; then
+		@echo "You are not root, run this target as root please"
+		exit 1
+	fi
+	go test ./cmd/... ./pkg/... -v -logtostderr --ginkgo.v
 
 manifests:
 	IMAGE_REGISTRY=$(IMAGE_REGISTRY) IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG) ./hack/generate-manifests.sh

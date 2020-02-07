@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: macvtap-cni
+spec:
+  selector:
+    matchLabels:
+      name: macvtap-cni
+  template:
+    metadata:
+      labels:
+        name: macvtap-cni
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: macvtap-cni
+        image: quay.io/kubevirt/macvtap-cni:latest
+        securityContext:
+          privileged: true
+        envFrom:
+        - configMapRef:
+            name: macvtap-deviceplugin-config
+        volumeMounts:
+          - name: deviceplugin
+            mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: deviceplugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins

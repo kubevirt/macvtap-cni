@@ -3,6 +3,7 @@ goimports-check
 goimports-format
 whitespace-check
 whitespace-format
+vet
 
 # Local kubevirtci cluster
 _kubevirtci/
