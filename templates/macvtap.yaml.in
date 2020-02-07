@@ -24,7 +24,21 @@ spec:
         volumeMounts:
           - name: deviceplugin
             mountPath: /var/lib/kubelet/device-plugins
+        command: [ "/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
+      initContainers:
+      - name: install-cni
+        image: {{ .ImageRegistry }}/{{ .ImageName }}:{{ .ImageTag }}
+        securityContext:
+          privileged: true
+        command: ['cp', '/macvtap-cni', '/host/opt/cni/bin/macvtap']
+        volumeMounts:
+          - name: cni
+            mountPath: /host/opt/cni/bin
+            mountPropagation: Bidirectional
       volumes:
         - name: deviceplugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
+        - name: cni
+          hostPath:
+            path: {{ .CniMountPath }}

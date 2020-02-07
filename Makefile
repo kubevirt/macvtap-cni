@@ -1,3 +1,5 @@
+CNI_MOUNT_PATH ?= /opt/cni/bin
+
 IMAGE_REGISTRY ?= quay.io/kubevirt
 IMAGE_NAME ?= macvtap-cni
 IMAGE_TAG ?= latest
@@ -78,7 +80,7 @@ test/unit:
 	go test ./cmd/... ./pkg/... -v -logtostderr --ginkgo.v
 
 manifests:
-	IMAGE_REGISTRY=$(IMAGE_REGISTRY) IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG) ./hack/generate-manifests.sh
+	IMAGE_REGISTRY=$(IMAGE_REGISTRY) IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG) CNI_MOUNT_PATH=$(CNI_MOUNT_PATH) ./hack/generate-manifests.sh
 
 vendor:
 	go mod tidy
