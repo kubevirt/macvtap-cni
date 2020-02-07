@@ -2,9 +2,22 @@ package util
 
 import (
 	"fmt"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/vishvananda/netlink"
+
+	"github.com/containernetworking/cni/pkg/types/current"
+
+	"github.com/containernetworking/plugins/pkg/ip"
+	"github.com/containernetworking/plugins/pkg/ns"
+	"github.com/containernetworking/plugins/pkg/utils/sysctl"
+)
+
+const (
+	// IPv4InterfaceArpProxySysctlTemplate allows proxy_arp on a given interface
+	IPv4InterfaceArpProxySysctlTemplate = "net.ipv4.conf.%s.proxy_arp"
 )
 
 func ModeFromString(s string) (netlink.MacvlanMode, error) {
@@ -138,4 +151,103 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 			break
 		}
 	}
+}
+
+// Move an existing macvtap interface from the current netns to the target netns, and rename it..
+// Optionally configure the MAC address of the interface and the link's MTU.
+func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *net.HardwareAddr, mtu int, netns ns.NetNS) (*current.Interface, error) {
+	var err error
+
+	macvtapIface, err := netlink.LinkByName(currentIfaceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to lookup device %q: %v", currentIfaceName, err)
+	}
+
+	// move the macvtap interface to the pod's netns
+	if err = netlink.LinkSetNsFd(macvtapIface, int(netns.Fd())); err != nil {
+		return nil, fmt.Errorf("failed to move iface %s to the netns %d because: %v", macvtapIface, netns.Fd(), err)
+	}
+
+	var macvtap *current.Interface = nil
+
+	// configure the macvtap iface
+	err = netns.Do(func(_ ns.NetNS) error {
+		defer func() {
+			if err != nil {
+				LinkDelete(currentIfaceName)
+				LinkDelete(newIfaceName)
+			}
+		}()
+
+		if mtu != 0 {
+			if err := netlink.LinkSetMTU(macvtapIface, mtu); err != nil {
+				return fmt.Errorf("failed to set the macvtap MTU for %s: %v", currentIfaceName, err)
+			}
+		}
+
+		if macAddr != nil {
+			if err := netlink.LinkSetHardwareAddr(macvtapIface, *macAddr); err != nil {
+				return fmt.Errorf("failed to add hardware addr to %q: %v", currentIfaceName, err)
+			}
+		}
+
+		renamedMacvtapIface, err := renameInterface(macvtapIface, newIfaceName)
+		if err != nil {
+			return err
+		}
+
+		// set proxy_arp on the interface
+		if err := configureArp(newIfaceName); err != nil {
+			return err
+		}
+
+		if err := netlink.LinkSetUp(renamedMacvtapIface); err != nil {
+			return fmt.Errorf("failed to set macvtap iface up: %v", err)
+		}
+
+		// Re-fetch macvtap to get all properties/attributes
+		// This enables us to report back the MAC address assigned to the macvtap iface
+		// and now that we've handed the macvtap over, update the netns where it runs
+		macvtapIface, err = netlink.LinkByName(newIfaceName)
+		if err != nil {
+			return err
+		}
+
+		macvtap = &current.Interface{
+			Name:    newIfaceName,
+			Mac:     macvtapIface.Attrs().HardwareAddr.String(),
+			Sandbox: netns.Path(),
+		}
+
+		return nil
+	})
+
+	return macvtap, err
+}
+
+func renameInterface(currentIface netlink.Link, newIfaceName string) (netlink.Link, error) {
+	currentIfaceName := currentIface.Attrs().Name
+	if err := ip.RenameLink(currentIfaceName, newIfaceName); err != nil {
+		return nil, fmt.Errorf("failed to rename macvlan to %q: %v", newIfaceName, err)
+	}
+
+	renamedMacvtapIface := currentIface
+	renamedMacvtapIface.Attrs().Name = newIfaceName
+
+	return renamedMacvtapIface, nil
+}
+
+func configureArp(ifaceName string) error {
+	// For sysctl, dots are replaced with forward slashes
+	ifaceNameAllowingDots := strings.Replace(ifaceName, ".", "/", -1)
+
+	// TODO: duplicate following lines for ipv6 support, when it will be added in other places
+	ipv4SysctlValueName := fmt.Sprintf(IPv4InterfaceArpProxySysctlTemplate, ifaceNameAllowingDots)
+	_, err := sysctl.Sysctl(ipv4SysctlValueName, "1")
+	if err != nil {
+		// the link will be removed in the CmdAdd deferred cleanup action
+		return fmt.Errorf("failed to set proxy_arp on newly added interface %q: %v", ifaceName, err)
+	}
+
+	return nil
 }
