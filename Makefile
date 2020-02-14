@@ -13,8 +13,16 @@ TARGETS = \
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 # Gather needed source files and directories to create target dependencies
-directories := $(filter-out ./ ./vendor/ ,$(sort $(dir $(wildcard ./*/))))
+directories=$(filter-out ./ ./vendor/ ./_out/ ./_kubevirtci/ ,$(sort $(dir $(wildcard ./*/))))
 all_sources=$(call rwildcard,$(directories),*) $(filter-out $(TARGETS), $(wildcard *))
+go_sources=$(call rwildcard,cmd/,*.go) $(call rwildcard,pkg/,*.go) $(call rwildcard,test/,*.go)
+
+# Configure Go
+export GOOS=linux
+export GOARCH=amd64
+export CGO_ENABLED=0
+export GO111MODULE=on
+export GOFLAGS=-mod=vendor
 
 .ONESHELL:
 
@@ -24,11 +32,11 @@ check: goimports-check whitespace-check vet test/unit
 
 format: goimports-format whitespace-format
 
-goimports-check: $(all_sources)
+goimports-check: $(go_sources)
 	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./test
 	touch $@
 
-goimports-format: $(all_sources)
+goimports-format: $(go_sources)
 	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./test
 	touch $@
 
@@ -40,7 +48,7 @@ whitespace-format: $(all_sources)
 	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./test
 	touch $@
 
-vet: $(all_sources)
+vet: $(go_sources)
 	go vet ./pkg/... ./cmd/... ./test/...
 	touch $@
 
