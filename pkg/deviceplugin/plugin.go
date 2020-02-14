@@ -13,7 +13,7 @@ import (
 const (
 	tapPath = "/dev/tap"
 	// Interfaces will be named as <Name><suffix>[0-<Capacity>]
-	suffix = "Mvp"
+	suffix          = "Mvp"
 	defaultCapacity = 100
 )
 
@@ -50,7 +50,7 @@ func (mdp *MacvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 			Health: pluginapi.Healthy,
 		})
 	}
-	
+
 	return macvtapDevs
 }
 
