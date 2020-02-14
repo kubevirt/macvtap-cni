@@ -77,7 +77,7 @@ test/unit:
 		@echo "You are not root, run this target as root please"
 		exit 1
 	fi
-	go test ./cmd/... ./pkg/... -v -logtostderr --ginkgo.v
+	go test ./cmd/... ./pkg/... -v --ginkgo.v
 
 manifests:
 	IMAGE_REGISTRY=$(IMAGE_REGISTRY) IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG) CNI_MOUNT_PATH=$(CNI_MOUNT_PATH) ./hack/generate-manifests.sh
