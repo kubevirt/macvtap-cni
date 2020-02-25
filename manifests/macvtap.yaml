@@ -21,10 +21,24 @@ spec:
         envFrom:
         - configMapRef:
             name: macvtap-deviceplugin-config
+        command: [ "/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
         volumeMounts:
           - name: deviceplugin
             mountPath: /var/lib/kubelet/device-plugins
+      initContainers:
+      - name: install-cni
+        image: quay.io/kubevirt/macvtap-cni:latest
+        securityContext:
+          privileged: true
+        command: ['cp', '/macvtap-cni', '/host/opt/cni/bin/macvtap']
+        volumeMounts:
+          - name: cni
+            mountPath: /host/opt/cni/bin
+            mountPropagation: Bidirectional
       volumes:
         - name: deviceplugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
+        - name: cni
+          hostPath:
+            path: /opt/cni/bin
