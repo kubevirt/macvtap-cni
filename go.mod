@@ -17,6 +17,8 @@ require (
 	golang.org/x/tools v0.0.0-20200117220505-0cba7a3a9ee9
 	google.golang.org/grpc v1.26.0
 	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc // indirect
+	k8s.io/api v0.0.0
+	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v0.0.0
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
 )
