@@ -17,7 +17,7 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 # Gather needed source files and directories to create target dependencies
 directories=$(filter-out ./ ./vendor/ ./_out/ ./_kubevirtci/ ,$(sort $(dir $(wildcard ./*/))))
 all_sources=$(call rwildcard,$(directories),*) $(filter-out $(TARGETS), $(wildcard *))
-go_sources=$(call rwildcard,cmd/,*.go) $(call rwildcard,pkg/,*.go) $(call rwildcard,test/,*.go)
+go_sources=$(call rwildcard,cmd/,*.go) $(call rwildcard,pkg/,*.go) $(call rwildcard,tests/,*.go)
 
 # Configure Go
 export GOOS=linux
@@ -35,23 +35,23 @@ check: goimports-check whitespace-check vet test/unit
 format: goimports-format whitespace-format
 
 goimports-check: $(go_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./test
+	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
 	touch $@
 
 goimports-format: $(go_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./test
+	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
 	touch $@
 
 whitespace-check: $(all_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./test
+	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
 	touch $@
 
 whitespace-format: $(all_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./test
+	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
 	touch $@
 
 vet: $(go_sources)
-	go vet ./pkg/... ./cmd/... ./test/...
+	go vet ./pkg/... ./cmd/... ./tests/...
 	touch $@
 
 docker-build:
