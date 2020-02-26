@@ -15,12 +15,20 @@
 package tests_test
 
 import (
+	"fmt"
 	"strings"
+	"strconv"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	macvtapResource = "macvtap.network.kubevirt.io"
 )
 
 var _ = Describe("macvtap-cni", func() {
@@ -47,16 +55,54 @@ var _ = Describe("macvtap-cni", func() {
 	Describe("macvtap resource creation", func() {
 
 		Context("WHEN a lower device is configured accordingly", func() {
-			BeforeEach(func() {
+			configMapName := "eth0-dp-config"
+			lowerDevice := "eth0"
+			quantity := 50
 
+			BeforeEach(func() {
+				macvtapConfig := &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: namespace,
+						Name:      configMapName,
+					},
+					Data: map[string]string{
+						"DP_MACVTAP_CONF": fmt.Sprintf(`
+							[ 
+								{
+        							"name" : %s,
+									"master" : %s,
+									"mode": "bridge",
+									"capacity" : %d
+						 		}
+							]`, lowerDevice, lowerDevice, quantity),
+					},
+				}
+				_, err := clientset.CoreV1().ConfigMaps(namespace).Create(macvtapConfig)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
-
+				err := clientset.CoreV1().ConfigMaps(namespace).Delete(configMapName, &metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
 			})
 
-			PIt("THEN a macvtap custom network resource is exposed", func() {
+			It("THEN a macvtap custom network resource is exposed", func() {
+				expectedResourceName := v1.ResourceName(buildMacvtapResourceName(lowerDevice))
+				waitForNodeResourceAvailability(1 * time.Minute, buildMacvtapResourceName(lowerDevice))
 
+				nodes, _ := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+				for _, node := range nodes.Items {
+					expectedQuantity, err := resource.ParseQuantity(strconv.Itoa(quantity))
+					Expect(err).NotTo(HaveOccurred())
+
+					// confirm capacity is OK
+					macvtapCapacity := node.Status.Capacity[v1.ResourceName(expectedResourceName)]
+					Expect(macvtapCapacity).To(Equal(expectedQuantity))
+
+					// confirm allocatable is OK
+					macvtapAllocatable := node.Status.Allocatable[v1.ResourceName(expectedResourceName)]
+					Expect(macvtapAllocatable).To(Equal(expectedQuantity))
+				}
 			})
 
 			Context("WHEN a macvtap interface is configured as a secondary interface", func() {
@@ -98,4 +144,25 @@ func filterPods(pods []v1.Pod, filterFunction func(v1.Pod) bool) []v1.Pod {
 		}
 	}
 	return filteredPods
+}
+
+func buildMacvtapResourceName(macvtapIfaceName string) string {
+	return fmt.Sprintf("%s/%s", macvtapResource, macvtapIfaceName)
+}
+
+func waitForNodeResourceAvailability(timeout time.Duration, resourceName string) {
+	checkForResourceAvailable := func() bool {
+		nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, node := range nodeList.Items {
+			if _, ok := node.Status.Capacity[v1.ResourceName(resourceName)]; ! ok {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	Eventually(checkForResourceAvailable, timeout, 2*time.Second).Should(BeTrue())
 }
