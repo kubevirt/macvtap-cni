@@ -31,6 +31,7 @@ import (
 const (
 	macvtapResource = "macvtap.network.kubevirt.io"
 	networkResource = "k8s.v1.cni.cncf.io/networks"
+	networkStatus   = "k8s.v1.cni.cncf.io/networks-status"
 )
 
 type reportedNetwork struct {
@@ -42,6 +43,7 @@ type reportedNetwork struct {
 
 var _ = Describe("macvtap-cni", func() {
 
+	lowerDevice := "eth0"
 	namespace := "default"
 
 	Describe("macvtap-cni infrastructure", func() {
@@ -58,44 +60,10 @@ var _ = Describe("macvtap-cni", func() {
 				})
 				Expect(len(networkStatus)).To(Equal(len(nodes.Items)))
 			})
-		})
-	})
-
-	Describe("macvtap resource creation", func() {
-
-		Context("WHEN a lower device is configured accordingly", func() {
-			configMapName := "eth0-dp-config"
-			lowerDevice := "eth0"
-			quantity := 50
-
-			BeforeEach(func() {
-				macvtapConfig := &v1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: namespace,
-						Name:      configMapName,
-					},
-					Data: map[string]string{
-						"DP_MACVTAP_CONF": fmt.Sprintf(`
-							[ 
-								{
-        							"name" : %s,
-									"master" : %s,
-									"mode": "bridge",
-									"capacity" : %d
-						 		}
-							]`, lowerDevice, lowerDevice, quantity),
-					},
-				}
-				_, err := clientset.CoreV1().ConfigMaps(namespace).Create(macvtapConfig)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := clientset.CoreV1().ConfigMaps(namespace).Delete(configMapName, &metav1.DeleteOptions{})
-				Expect(err).NotTo(HaveOccurred())
-			})
 
 			It("THEN a macvtap custom network resource is exposed", func() {
+				quantity := 50
+
 				expectedResourceName := v1.ResourceName(buildMacvtapResourceName(lowerDevice))
 				waitForNodeResourceAvailability(1 * time.Minute, buildMacvtapResourceName(lowerDevice))
 
@@ -113,11 +81,15 @@ var _ = Describe("macvtap-cni", func() {
 					Expect(macvtapAllocatable).To(Equal(expectedQuantity))
 				}
 			})
+		})
+	})
 
-			Context("WHEN a macvtap interface is configured as a secondary interface", func() {
-				networkAttachmentDefinitionName := "macvtap0"
-				postUrl := "/apis/k8s.cni.cncf.io/v1/namespaces/%s/network-attachment-definitions/%s"
-				nad := `
+	Describe("macvtap resource creation", func() {
+
+		Context("WHEN a macvtap interface is configured as a secondary interface", func() {
+			networkAttachmentDefinitionName := "macvtap0"
+			postUrl := "/apis/k8s.cni.cncf.io/v1/namespaces/%s/network-attachment-definitions/%s"
+			nad := `
 					{
 						"apiVersion":"k8s.cni.cncf.io/v1",
 						"kind":"NetworkAttachmentDefinition",
@@ -134,101 +106,104 @@ var _ = Describe("macvtap-cni", func() {
 					}
 				`
 
+			BeforeEach(func() {
+				clientset.RESTClient().
+					Post().
+					RequestURI(fmt.Sprintf(postUrl, namespace, networkAttachmentDefinitionName)).
+					Body([]byte(fmt.Sprintf(nad, networkAttachmentDefinitionName, namespace, buildMacvtapResourceName(lowerDevice), networkAttachmentDefinitionName))).
+					Do()
+			})
+
+			AfterEach(func() {
+				clientset.RESTClient().
+					Delete().
+					RequestURI(fmt.Sprintf(postUrl, namespace, networkAttachmentDefinitionName)).
+					Do()
+			})
+
+			Context("WHEN a pod requests aforementioned macvtap resource", func() {
+				podName := "megapod"
+				containerName := "tinycontainer"
+
+				container := v1.Container{
+					Name:    containerName,
+					Image:   "alpine",
+					Command: []string{"/bin/sh", "-c", "sleep 999999"},
+					Resources: v1.ResourceRequirements{
+						Limits: buildMacvtapResourceRequest(lowerDevice, 1),
+					},
+				}
+
+				pod1 := &v1.Pod{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Pod",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        podName,
+						Namespace:   namespace,
+						Annotations: buildMacvtapNetworkAnnotations(networkAttachmentDefinitionName),
+					},
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{container},
+					},
+				}
+
 				BeforeEach(func() {
-					clientset.RESTClient().
-						Post().
-						RequestURI(fmt.Sprintf(postUrl, namespace, networkAttachmentDefinitionName)).
-						Body([]byte(fmt.Sprintf(nad, networkAttachmentDefinitionName, namespace, buildMacvtapResourceName(lowerDevice), networkAttachmentDefinitionName))).
-						Do()
+					_, err := clientset.CoreV1().Pods(namespace).Create(pod1)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Waiting for pod to be ready")
+					waitForPodReadiness(podName, namespace, 1 * time.Minute)
 				})
 
 				AfterEach(func() {
-					clientset.RESTClient().
-						Delete().
-						RequestURI(fmt.Sprintf(postUrl, namespace, networkAttachmentDefinitionName)).
-						Do()
+					err := clientset.CoreV1().Pods(namespace).Delete(podName, nil)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
-				Context("WHEN a pod requests aforementioned macvtap resource", func() {
-					podName := "megapod"
-					containerName := "tinycontainer"
 
-					container := v1.Container{
-						Name:    containerName,
-						Image:   "alpine",
-						Command: []string{"/bin/sh", "-c", "sleep 999999"},
-						Resources: v1.ResourceRequirements{
-							Limits: buildMacvtapResourceRequest(lowerDevice, 1),
-						},
-					}
+				It("SHOULD successfully get a second interface, of macvtap type, with configured MAC address", func() {
+					pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
 
-					pod := &v1.Pod{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:        podName,
-							Namespace:   namespace,
-							Annotations: buildMacvtapNetworkAnnotations(networkAttachmentDefinitionName),
-						},
-						Spec: v1.PodSpec{
-							Containers: []v1.Container{container},
-						},
-					}
+					// assert resources have been allocated
+					Expect(pod.Annotations).To(HaveKey(networkResource))
+					Expect(pod.Spec.Containers).To(HaveLen(1))
 
-					BeforeEach(func() {
-						_, err := clientset.CoreV1().Pods(namespace).Create(pod)
-						Expect(err).NotTo(HaveOccurred())
+					theContainer := pod.Spec.Containers[0]
+					Expect(theContainer.Resources.Limits).To(Equal(buildMacvtapResourceRequest(lowerDevice, 1)))
 
-						By("Waiting for pod to be ready")
-						waitForPodReadiness(podName, namespace, 1 * time.Minute)
-					})
+					// assert MAC address is found on the second interface
+					podNetworks := pod.Annotations[networkStatus]
+					networks, err := parseNetwork(podNetworks)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(networks).To(HaveLen(2))
 
-					AfterEach(func() {
-						err := clientset.CoreV1().Pods(namespace).Delete(podName, nil)
-						Expect(err).NotTo(HaveOccurred())
-					})
+					// macvtap iface is created as a secondary iface
+					macvtapNetwork := networks[1]
+					Expect(macvtapNetwork.Name).To(Equal(networkAttachmentDefinitionName))
+					Expect(macvtapNetwork.Interface).To(Equal("net1"))
+					Expect(macvtapNetwork.Mac).NotTo(BeEmpty())
+				})
+			})
 
-					It("SHOULD successfully get a second interface, of macvtap type, with configured MAC address", func() {
-						pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
-						Expect(err).NotTo(HaveOccurred())
+			PContext("WHEN a VMI requests aforementioned macvtap resource", func() {
+				It("THEN the macvtap interface can be used to reach the internet", func() {
 
-						// assert resources have been allocated
-						Expect(pod.Annotations).To(HaveKey(networkResource))
-						Expect(pod.Spec.Containers).To(HaveLen(1))
-
-						theContainer := pod.Spec.Containers[0]
-						Expect(theContainer.Resources.Limits).To(Equal(buildMacvtapResourceRequest(lowerDevice, 1)))
-
-						// assert MAC address is found on the second interface
-						podNetworks := pod.Annotations["k8s.v1.cni.cncf.io/networks-status"]
-
-						networks, err := parseNetwork(podNetworks)
-						Expect(err).NotTo(HaveOccurred())
-						Expect(networks).To(HaveLen(2))
-
-						// macvtap iface is created as a secondary iface
-						macvtapNetwork := networks[1]
-						Expect(macvtapNetwork.Name).To(Equal(networkAttachmentDefinitionName))
-						Expect(macvtapNetwork.Interface).To(Equal("net1"))
-						Expect(macvtapNetwork.Mac).NotTo(BeEmpty())
-					})
 				})
 
-				PContext("WHEN a VMI requests aforementioned macvtap resource", func() {
-					It("THEN the macvtap interface can be used to reach the internet", func() {
+				Context("WHEN another VMI is created, having an additional macvtap interface", func() {
+					It("THEN it can reach another VMI via the macvtap interface", func() {
 
 					})
 
-					Context("WHEN another VMI is created, having an additional macvtap interface", func() {
-						It("THEN it can reach another VMI via the macvtap interface", func() {
+					It("THEN it cannot reach the host where its pod was scheduled", func() {
 
-						})
+					})
 
-						It("THEN it cannot reach the host where its pod was scheduled", func() {
+					It("THEN it can reach the other hosts in the cluster", func() {
 
-						})
-
-						It("THEN it can reach the other hosts in the cluster", func() {
-
-						})
 					})
 				})
 			})
