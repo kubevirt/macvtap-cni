@@ -17,8 +17,8 @@ package tests_test
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -26,6 +26,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -40,6 +41,24 @@ type reportedNetwork struct {
 	Mac       string            `json:"mac"`
 	Dns       map[string]string `json:"dns"`
 }
+
+var postUrl = "/apis/k8s.cni.cncf.io/v1/namespaces/%s/network-attachment-definitions/%s"
+var nad = `
+	{
+		"apiVersion":"k8s.cni.cncf.io/v1",
+		"kind":"NetworkAttachmentDefinition",
+		"metadata": {
+			"name":"%s",
+			"namespace":"%s",
+			"annotations": {
+				"k8s.v1.cni.cncf.io/resourceName": "%s"
+			}
+		},
+		"spec":{
+			"config":"{ \"cniVersion\": \"0.3.1\", \"name\": \"%s\", \"type\": \"macvtap\"}"
+		}
+	}
+`
 
 var _ = Describe("macvtap-cni", func() {
 
@@ -88,37 +107,13 @@ var _ = Describe("macvtap-cni", func() {
 
 		Context("WHEN a macvtap interface is configured as a secondary interface", func() {
 			networkAttachmentDefinitionName := "macvtap0"
-			postUrl := "/apis/k8s.cni.cncf.io/v1/namespaces/%s/network-attachment-definitions/%s"
-			nad := `
-					{
-						"apiVersion":"k8s.cni.cncf.io/v1",
-						"kind":"NetworkAttachmentDefinition",
-						"metadata": {
-							"name":"%s",
-							"namespace":"%s",
-							"annotations": {
-								"k8s.v1.cni.cncf.io/resourceName": "%s"
-							}
-						},
-						"spec":{
-							"config":"{ \"cniVersion\": \"0.3.1\", \"name\": \"%s\", \"type\": \"macvtap\"}"
-						}
-					}
-				`
 
 			BeforeEach(func() {
-				clientset.RESTClient().
-					Post().
-					RequestURI(fmt.Sprintf(postUrl, namespace, networkAttachmentDefinitionName)).
-					Body([]byte(fmt.Sprintf(nad, networkAttachmentDefinitionName, namespace, buildMacvtapResourceName(lowerDevice), networkAttachmentDefinitionName))).
-					Do()
+				provisionNetworkAttachmentDefinition(networkAttachmentDefinitionName, lowerDevice, namespace)
 			})
 
 			AfterEach(func() {
-				clientset.RESTClient().
-					Delete().
-					RequestURI(fmt.Sprintf(postUrl, namespace, networkAttachmentDefinitionName)).
-					Do()
+				deleteNetworkAttachmentDefinition(networkAttachmentDefinitionName, namespace)
 			})
 
 			Context("WHEN a pod requests aforementioned macvtap resource", func() {
@@ -154,14 +149,13 @@ var _ = Describe("macvtap-cni", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for pod to be ready")
-					waitForPodReadiness(podName, namespace, 1 * time.Minute)
+					waitForPodReadiness(podName, namespace, 1*time.Minute)
 				})
 
 				AfterEach(func() {
 					err := clientset.CoreV1().Pods(namespace).Delete(podName, nil)
 					Expect(err).NotTo(HaveOccurred())
 				})
-
 
 				It("SHOULD successfully get a second interface, of macvtap type, with configured MAC address", func() {
 					pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
@@ -210,6 +204,21 @@ var _ = Describe("macvtap-cni", func() {
 		})
 	})
 })
+
+func deleteNetworkAttachmentDefinition(macvtapIfaceName string, namespace string) rest.Result {
+	return clientset.RESTClient().
+		Delete().
+		RequestURI(fmt.Sprintf(postUrl, namespace, macvtapIfaceName)).
+		Do()
+}
+
+func provisionNetworkAttachmentDefinition(macvtapIfaceName string, lowerDeviceName string, namespace string) rest.Result {
+	return clientset.RESTClient().
+		Post().
+		RequestURI(fmt.Sprintf(postUrl, namespace, macvtapIfaceName)).
+		Body([]byte(fmt.Sprintf(nad, macvtapIfaceName, namespace, buildMacvtapResourceName(lowerDeviceName), macvtapIfaceName))).
+		Do()
+}
 
 func filterPods(pods []v1.Pod, filterFunction func(v1.Pod) bool) []v1.Pod {
 	filteredPods := make([]v1.Pod, 0)
