@@ -16,4 +16,8 @@ rm -rf $destination
 mkdir -p $destination
 DESTINATION=$destination IMAGE_REGISTRY=registry:5000 make manifests
 
-# TODO: Remove old components and apply new ones
+./cluster/kubectl.sh delete --ignore-not-found configmap macvtap-deviceplugin-config
+./cluster/kubectl.sh delete --ignore-not-found ds macvtap-cni
+
+./cluster/kubectl.sh create -f examples/macvtap-deviceplugin-config.yaml
+./cluster/kubectl.sh create -f _out/manifests/macvtap.yaml
