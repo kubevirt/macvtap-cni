@@ -3,6 +3,9 @@
 ## Objectives
 - deploy the plugins without day 1 configuration
 - dynamic day 2 host resource exposure
+- expose lower device as a logical resource
+- be able to use node selectors / node affinity / NIC selectors /
+resource name
 
 ## Requirements
 - keep the DP as independent from multus and CNI as possible
