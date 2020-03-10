@@ -60,6 +60,9 @@ docker-build:
 docker-push:
 	docker push ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
+docker-tag-latest:
+	docker tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+
 cluster-up:
 	./cluster/up.sh
 
