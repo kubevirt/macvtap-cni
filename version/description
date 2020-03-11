@@ -1,13 +1,15 @@
-v0.0.0
+v0.1.0
 
-Anything is better than nothing. When it comes to docker images.
+Initial release of the macvtap-cni.
+It features static configuration only - via a config map.
 
 Features:
 * macvtap device plugin, with explicit configuration (#2)
 * macvtap CNI plugin is installed across the cluster (#4)
 
+Docs:
 * add README (#9)
 
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.0.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.1.0
 ```
