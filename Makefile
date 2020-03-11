@@ -89,6 +89,13 @@ vendor:
 	go mod tidy
 	go mod vendor
 
+prepare-patch:
+	./hack/prepare-release.sh patch
+prepare-minor:
+	./hack/prepare-release.sh minor
+prepare-major:
+	./hack/prepare-release.sh major
+
 release: IMAGE_TAG = $(shell hack/version.sh)
 release: docker-build docker-push
 
