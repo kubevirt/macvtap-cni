@@ -9,6 +9,8 @@ mkdir -p $GOROOT
 export GOPATH=/tmp/macvtap-cni/go/path
 mkdir -p $GOPATH
 export PATH=${GOPATH}/bin:${GOROOT}/bin:${PATH}
+export GOBIN=${GOROOT}/bin/
+mkdir -p $GOBIN
 
 echo 'Install Go 1.12'
 export GIMME_GO_VERSION=1.12

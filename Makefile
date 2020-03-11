@@ -11,6 +11,9 @@ TARGETS = \
 	whitespace-check \
 	vet
 
+# tools
+GITHUB_RELEASE ?= $(GOBIN)/github-release
+
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
@@ -96,8 +99,13 @@ prepare-minor:
 prepare-major:
 	./hack/prepare-release.sh major
 
+$(GITHUB_RELEASE): go.mod
+	go install ./vendor/github.com/aktau/github-release
+
 release: IMAGE_TAG = $(shell hack/version.sh)
 release: docker-build docker-push
+release: $(GITHUB_RELEASE)
+	TAG=$(IMAGE_TAG) GITHUB_RELEASE=$(GITHUB_RELEASE) DESCRIPTION=./version/description ./hack/release.sh
 
 .PHONY: \
 	all \
