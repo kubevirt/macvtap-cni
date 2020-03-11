@@ -89,6 +89,9 @@ vendor:
 	go mod tidy
 	go mod vendor
 
+release: IMAGE_TAG = $(shell hack/version.sh)
+release: docker-build docker-push
+
 .PHONY: \
 	all \
 	check \
