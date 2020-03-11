@@ -1,3 +1,6 @@
+# github.com/aktau/github-release v0.7.2
+github.com/aktau/github-release
+github.com/aktau/github-release/github
 # github.com/containernetworking/cni v0.7.1
 github.com/containernetworking/cni/pkg/skel
 github.com/containernetworking/cni/pkg/version
@@ -15,6 +18,8 @@ github.com/containernetworking/plugins/pkg/testutils
 github.com/coreos/go-iptables/iptables
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
+# github.com/dustin/go-humanize v1.0.0
+github.com/dustin/go-humanize
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/gogo/protobuf v0.0.0-20171007142547-342cbe0a0415
@@ -88,11 +93,15 @@ github.com/onsi/gomega/matchers/support/goraph/util
 github.com/safchain/ethtool
 # github.com/spf13/pflag v1.0.1
 github.com/spf13/pflag
+# github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
+github.com/tomnomnom/linkheader
 # github.com/vishvananda/netlink v1.1.0
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
 # github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
 github.com/vishvananda/netns
+# github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2
+github.com/voxelbrain/goptions
 # golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20190812203447-cdfb69ac37fc
