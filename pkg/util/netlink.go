@@ -101,14 +101,27 @@ func LinkDelete(link string) error {
 	return err
 }
 
-// Listen for events on a specific interface and callback if any. The interface
-// does not have to exist. Use the stop channel to stop listening.
+// OnLinkEvent upkeeps a subscription to netlink events and callbacks for any
+// event on a specific interface.
+// The subscription might temporarily fail. On resubscription, the callback is
+// invoked to cover for events that might have been missed on that time. That
+// means some spurious callbacks unrelated to the interface might happen and
+// the caller should account for it. For convenience, to avoid losing any
+// relevant information between the time of this function call (or a previous
+// time when the caller initializes state) and the time the subscription is
+// effective, the callback is also invoked upon first subscription. As a
+// summary, callback is invoked:
+//
+// * A first time, after first subscription
+// * Once every re-subscription
+// * On any event on the specified interface
+//
 func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)) {
 	done := make(chan struct{})
 	defer close(done)
 
 	options := netlink.LinkSubscribeOptions{
-		ListExisting: true,
+		ListExisting: false,
 		ErrorCallback: func(err error) {
 			errcb(fmt.Errorf("Error while listening on link events: %v", err))
 		},
@@ -124,6 +137,8 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 			return
 		}
 		subscribed = true
+		// Callback on every subscription
+		do()
 	}
 
 	subscribe()
@@ -135,7 +150,7 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 				subscribe()
 				continue
 			case <-stop:
-				break
+				return
 			}
 		}
 
@@ -148,7 +163,7 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 				}
 			}
 		case <-stop:
-			break
+			return
 		}
 	}
 }
