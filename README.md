@@ -25,7 +25,7 @@ to be made available:
 * `capacity` (uint, optional, default=100) the capacity of the resource
 
 In the default deployment, this configuration shall be provided through a
-config map, for [example](examples/macvtap-deviceplugin-config.yaml):
+config map, for [example](examples/macvtap-deviceplugin-config-explicit.yaml):
 
 ```yaml
 kind: ConfigMap
@@ -50,6 +50,13 @@ configmap "macvtap-deviceplugin-config" created
 This configuration will result in up to 50 macvtap interfaces being offered for
 consumption, using eth0 as the lower device, in bridge mode, and under
 resource name `macvtap.network.kubevirt.io/dataplane`.
+
+A configuration consisting of an empty json array, as proposed in the default
+[example](examples/macvtap-deviceplugin-config-default.yaml), causes the device
+plugin to expose one resource for every physical link or bond on each node. For
+example, if a node has a physical link called eth0, a resourced named
+`macvtap.network.kubevirt.io/eth0` would be made available to use macvtap
+interfaces with eth0 as the lower device
 
 The macvtap CNI can be deployed using the proposed
 [daemon set](manifests/macvtap.yaml):

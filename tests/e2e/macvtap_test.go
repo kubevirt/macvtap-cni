@@ -81,7 +81,7 @@ var _ = Describe("macvtap-cni", func() {
 			})
 
 			It("THEN a macvtap custom network resource is exposed", func() {
-				quantity := 50
+				quantity := 100
 
 				expectedResourceName := v1.ResourceName(buildMacvtapResourceName(lowerDevice))
 				waitForNodeResourceAvailability(1*time.Minute, buildMacvtapResourceName(lowerDevice))

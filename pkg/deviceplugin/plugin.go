@@ -14,8 +14,11 @@ import (
 const (
 	tapPath = "/dev/tap"
 	// Interfaces will be named as <Name><suffix>[0-<Capacity>]
-	suffix          = "Mvp"
-	defaultCapacity = 100
+	suffix = "Mvp"
+	// DefaultCapacity is the default when no capacity is provided
+	DefaultCapacity = 100
+	// DefaultMode is the default when no mode is provided
+	DefaultMode = "bridge"
 )
 
 type macvtapDevicePlugin struct {
@@ -44,7 +47,7 @@ func (mdp *macvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 
 	var capacity = mdp.Capacity
 	if capacity <= 0 {
-		capacity = defaultCapacity
+		capacity = DefaultCapacity
 	}
 
 	for i := 0; i < capacity; i++ {
