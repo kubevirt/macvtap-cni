@@ -21,10 +21,14 @@ type macvtapConfig struct {
 }
 
 type macvtapLister struct {
+	// NetNsPath is the path to the network namespace the lister operates in.
+	NetNsPath string
 }
 
-func NewMacvtapLister() *macvtapLister {
-	return &macvtapLister{}
+func NewMacvtapLister(netNsPath string) *macvtapLister {
+	return &macvtapLister{
+		NetNsPath: netNsPath,
+	}
 }
 
 func (ml macvtapLister) GetResourceNamespace() string {
@@ -74,5 +78,6 @@ func (ml macvtapLister) NewPlugin(name string) dpm.PluginInterface {
 		config[name].Master,
 		config[name].Mode,
 		config[name].Capacity,
+		ml.NetNsPath,
 	)
 }

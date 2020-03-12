@@ -3,6 +3,7 @@ package deviceplugin
 import (
 	"fmt"
 
+	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
@@ -18,19 +19,22 @@ const (
 )
 
 type macvtapDevicePlugin struct {
-	Name        string
-	Master      string
-	Mode        string
-	Capacity    int
+	Name     string
+	Master   string
+	Mode     string
+	Capacity int
+	// NetNsPath is the path to the network namespace the plugin operates in.
+	NetNsPath   string
 	stopWatcher chan struct{}
 }
 
-func NewMacvtapDevicePlugin(name string, master string, mode string, capacity int) *macvtapDevicePlugin {
+func NewMacvtapDevicePlugin(name string, master string, mode string, capacity int, netNsPath string) *macvtapDevicePlugin {
 	return &macvtapDevicePlugin{
 		Name:        name,
 		Master:      master,
 		Mode:        mode,
 		Capacity:    capacity,
+		NetNsPath:   netNsPath,
 		stopWatcher: make(chan struct{}),
 	}
 }
@@ -72,11 +76,17 @@ func (mdp *macvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 
 	didMasterExist := false
 	onMasterEvent := func() {
-		doesMasterExist, err := util.LinkExists(mdp.Master)
+		var doesMasterExist bool
+		err := ns.WithNetNSPath(mdp.NetNsPath, func(_ ns.NetNS) error {
+			var err error
+			doesMasterExist, err = util.LinkExists(mdp.Master)
+			return err
+		})
 		if err != nil {
 			glog.Warningf("Error while checking on master %s: %v", mdp.Master, err)
 			return
 		}
+
 		if didMasterExist != doesMasterExist {
 			emitResponse(doesMasterExist)
 			didMasterExist = doesMasterExist
@@ -88,6 +98,7 @@ func (mdp *macvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 	// not offer any otherwise.
 	util.OnLinkEvent(
 		mdp.Master,
+		mdp.NetNsPath,
 		onMasterEvent,
 		mdp.stopWatcher,
 		func(err error) {
@@ -113,7 +124,12 @@ func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 			// no de-allocate flow to clean up. So we attempt to delete a
 			// possibly existing existing interface before creating it to reset
 			// its state.
-			index, err := util.RecreateMacvtap(name, mdp.Master, mdp.Mode)
+			var index int
+			err := ns.WithNetNSPath(mdp.NetNsPath, func(_ ns.NetNS) error {
+				var err error
+				index, err = util.RecreateMacvtap(name, mdp.Master, mdp.Mode)
+				return err
+			})
 			if err != nil {
 				return nil, err
 			}

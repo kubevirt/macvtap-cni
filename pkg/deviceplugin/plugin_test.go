@@ -3,7 +3,6 @@ package deviceplugin_test
 import (
 	"fmt"
 	"math/rand"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -63,12 +62,11 @@ var _ = Describe("Macvtap device plugin", func() {
 	var masterIfaceName string
 	var masterIface netlink.Link
 	var sendSpy *ListAndWatchServerSendSpy
+	var testNs ns.NetNS
 
 	BeforeEach(func() {
-		currNs, err := ns.GetCurrentNS()
-		Expect(err).NotTo(HaveOccurred())
-
-		testNs, err := testutils.NewNS()
+		var err error
+		testNs, err = testutils.NewNS()
 		Expect(err).NotTo(HaveOccurred())
 
 		masterIfaceName = fmt.Sprintf("master%d", rand.Intn(100))
@@ -82,24 +80,19 @@ var _ = Describe("Macvtap device plugin", func() {
 		err = netlink.LinkAdd(masterIface)
 		Expect(err).NotTo(HaveOccurred())
 
-		mvdp = NewMacvtapDevicePlugin(masterIfaceName, masterIfaceName, "bridge", 0)
+		mvdp = NewMacvtapDevicePlugin(masterIfaceName, masterIfaceName, "bridge", 0, testNs.Path())
 
 		sendSpy = &ListAndWatchServerSendSpy{}
 		go func() {
-			err := testNs.Do(func(ns ns.NetNS) error {
-				return mvdp.ListAndWatch(nil, sendSpy)
-			})
-			Expect(err).NotTo(HaveOccurred())
+			mvdp.ListAndWatch(nil, sendSpy)
 		}()
-
-		runtime.LockOSThread()
-		err = testNs.Set()
-		Expect(err).NotTo(HaveOccurred())
 
 		cleanup = func() {
 			mvdp.(dpm.PluginInterfaceStop).Stop()
-			netlink.LinkDel(masterIface)
-			currNs.Set()
+			testNs.Do(func(ns ns.NetNS) error {
+				netlink.LinkDel(masterIface)
+				return nil
+			})
 		}
 	})
 
@@ -122,7 +115,12 @@ var _ = Describe("Macvtap device plugin", func() {
 		res, err := mvdp.Allocate(nil, req)
 		Expect(err).NotTo(HaveOccurred())
 
-		iface, err := netlink.LinkByName(ifaceName)
+		var iface netlink.Link
+		err = testNs.Do(func(ns ns.NetNS) error {
+			var err error
+			iface, err = netlink.LinkByName(ifaceName)
+			return err
+		})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(iface.Type()).To(Equal("macvtap"))
 
@@ -143,7 +141,9 @@ var _ = Describe("Macvtap device plugin", func() {
 			})
 
 			By("then deleting the master device", func() {
-				err := util.LinkDelete(masterIfaceName)
+				err := testNs.Do(func(ns ns.NetNS) error {
+					return util.LinkDelete(masterIfaceName)
+				})
 				Expect(err).NotTo(HaveOccurred())
 			})
 

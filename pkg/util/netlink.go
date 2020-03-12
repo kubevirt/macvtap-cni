@@ -3,10 +3,12 @@ package util
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 
 	"github.com/containernetworking/cni/pkg/types/current"
 
@@ -116,7 +118,7 @@ func LinkDelete(link string) error {
 // * Once every re-subscription
 // * On any event on the specified interface
 //
-func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)) {
+func OnLinkEvent(name string, nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -130,8 +132,16 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 	subscribed := false
 	var netlinkCh chan netlink.LinkUpdate
 	subscribe := func() {
+		ns, err := netns.GetFromPath(nsPath)
+		if err != nil {
+			errcb(fmt.Errorf("Could not open namespace: %v", err))
+			return
+		}
+		defer ns.Close()
+
+		options.Namespace = &ns
 		netlinkCh = make(chan netlink.LinkUpdate)
-		err := netlink.LinkSubscribeWithOptions(netlinkCh, done, options)
+		err = netlink.LinkSubscribeWithOptions(netlinkCh, done, options)
 		if err != nil {
 			errcb(fmt.Errorf("Error while subscribing for link events: %v", err))
 			return
@@ -265,4 +275,9 @@ func configureArp(ifaceName string) error {
 	}
 
 	return nil
+}
+
+// GetMainThreadNetNsPath returns the path of the main thread's namespace
+func GetMainThreadNetNsPath() string {
+	return fmt.Sprintf("/proc/%d/ns/net", os.Getpid())
 }
