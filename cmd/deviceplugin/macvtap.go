@@ -17,6 +17,6 @@ func main() {
 		glog.Exitf("%s environment variable must be set", macvtap.ConfigEnvironmentVariable)
 	}
 
-	manager := dpm.NewManager(macvtap.MacvtapLister{})
+	manager := dpm.NewManager(macvtap.NewMacvtapLister())
 	manager.Run()
 }

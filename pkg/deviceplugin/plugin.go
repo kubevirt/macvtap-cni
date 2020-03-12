@@ -17,7 +17,7 @@ const (
 	defaultCapacity = 100
 )
 
-type MacvtapDevicePlugin struct {
+type macvtapDevicePlugin struct {
 	Name        string
 	Master      string
 	Mode        string
@@ -25,8 +25,8 @@ type MacvtapDevicePlugin struct {
 	stopWatcher chan struct{}
 }
 
-func NewMacvtapDevicePlugin(name string, master string, mode string, capacity int) *MacvtapDevicePlugin {
-	return &MacvtapDevicePlugin{
+func NewMacvtapDevicePlugin(name string, master string, mode string, capacity int) *macvtapDevicePlugin {
+	return &macvtapDevicePlugin{
 		Name:        name,
 		Master:      master,
 		Mode:        mode,
@@ -35,7 +35,7 @@ func NewMacvtapDevicePlugin(name string, master string, mode string, capacity in
 	}
 }
 
-func (mdp *MacvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
+func (mdp *macvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 	var macvtapDevs []*pluginapi.Device
 
 	var capacity = mdp.Capacity
@@ -54,7 +54,7 @@ func (mdp *MacvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 	return macvtapDevs
 }
 
-func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
+func (mdp *macvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	// Initialize two arrays, one for devices offered when master exists,
 	// and no devices if master does not exist.
 	allocatableDevs := mdp.generateMacvtapDevices()
@@ -97,7 +97,7 @@ func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 	return nil
 }
 
-func (mdp *MacvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	var response pluginapi.AllocateResponse
 
 	for _, req := range r.ContainerRequests {
@@ -133,15 +133,15 @@ func (mdp *MacvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 	return &response, nil
 }
 
-func (mdp *MacvtapDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
+func (mdp *macvtapDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	return nil, nil
 }
 
-func (mdp *MacvtapDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
+func (mdp *macvtapDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	return nil, nil
 }
 
-func (mdp *MacvtapDevicePlugin) Stop() error {
+func (mdp *macvtapDevicePlugin) Stop() error {
 	close(mdp.stopWatcher)
 	return nil
 }

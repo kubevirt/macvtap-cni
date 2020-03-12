@@ -9,6 +9,7 @@ import (
 
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/containernetworking/plugins/pkg/testutils"
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/metadata"
@@ -58,7 +59,7 @@ func (s *ListAndWatchServerSendSpy) SetTrailer(m metadata.MD) {
 
 var _ = Describe("Macvtap device plugin", func() {
 	var cleanup func()
-	var mvdp *MacvtapDevicePlugin
+	var mvdp dpm.PluginInterface
 	var masterIfaceName string
 	var masterIface netlink.Link
 	var sendSpy *ListAndWatchServerSendSpy
@@ -96,7 +97,7 @@ var _ = Describe("Macvtap device plugin", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		cleanup = func() {
-			mvdp.Stop()
+			mvdp.(dpm.PluginInterfaceStop).Stop()
 			netlink.LinkDel(masterIface)
 			currNs.Set()
 		}

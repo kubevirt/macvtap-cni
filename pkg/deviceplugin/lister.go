@@ -13,23 +13,27 @@ const (
 	ConfigEnvironmentVariable = "DP_MACVTAP_CONF"
 )
 
-type MacvtapConfig struct {
+type macvtapConfig struct {
 	Name     string `json:"name"`
 	Master   string `json:"master"`
 	Mode     string `json:"mode"`
 	Capacity int    `json:"capacity"`
 }
 
-type MacvtapLister struct {
+type macvtapLister struct {
 }
 
-func (ml MacvtapLister) GetResourceNamespace() string {
+func NewMacvtapLister() *macvtapLister {
+	return &macvtapLister{}
+}
+
+func (ml macvtapLister) GetResourceNamespace() string {
 	return resourceNamespace
 }
 
-func readConfig() (map[string]MacvtapConfig, error) {
-	var config []MacvtapConfig
-	configMap := make(map[string]MacvtapConfig)
+func readConfig() (map[string]macvtapConfig, error) {
+	var config []macvtapConfig
+	configMap := make(map[string]macvtapConfig)
 
 	configEnv := os.Getenv(ConfigEnvironmentVariable)
 	err := json.Unmarshal([]byte(configEnv), &config)
@@ -44,7 +48,7 @@ func readConfig() (map[string]MacvtapConfig, error) {
 	return configMap, nil
 }
 
-func (ml MacvtapLister) Discover(pluginListCh chan dpm.PluginNameList) {
+func (ml macvtapLister) Discover(pluginListCh chan dpm.PluginNameList) {
 	var plugins = make(dpm.PluginNameList, 0)
 
 	config, err := readConfig()
@@ -62,7 +66,7 @@ func (ml MacvtapLister) Discover(pluginListCh chan dpm.PluginNameList) {
 	pluginListCh <- plugins
 }
 
-func (ml MacvtapLister) NewPlugin(name string) dpm.PluginInterface {
+func (ml macvtapLister) NewPlugin(name string) dpm.PluginInterface {
 	config, _ := readConfig()
 	glog.V(3).Infof("Creating device plugin with config %+v", config[name])
 	return NewMacvtapDevicePlugin(
