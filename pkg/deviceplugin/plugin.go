@@ -84,7 +84,7 @@ func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 	}
 
 	// Listen for events of master interface. On any, check if master a
-	// interface exists. If it does, offer up to capacity mactvtap devices. Do
+	// interface exists. If it does, offer up to capacity macvtap devices. Do
 	// not offer any otherwise.
 	util.OnLinkEvent(
 		mdp.Master,
