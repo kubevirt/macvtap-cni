@@ -2,19 +2,21 @@
 
 set -ex
 
-CNI_MOUNT_PATH=${CNI_MOUNT_PATH} # the default is stored in Makefile
-IMAGE_REGISTRY=${IMAGE_REGISTRY} # the default is stored in Makefile
-IMAGE_NAME=${IMAGE_NAME} # the default is stored in Makefile
-IMAGE_TAG=${IMAGE_TAG} # the default is store in Makefile
+CNI_MOUNT_PATH=${CNI_MOUNT_PATH}       # the default is stored in Makefile
+NAMESPACE=${NAMESPACE}                 # the default is store in Makefile
+IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY} # the default is store in Makefile
+
+# compose the full img name - defaults in Makefile
+MACVTAP_IMG=${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
 DESTINATION=${DESTINATION:-manifests}
 
 for template in templates/*.in; do
     name=$(basename ${template%.in})
     sed \
-        -e "s#{{ .ImageRegistry }}#${IMAGE_REGISTRY}#g" \
-        -e "s#{{ .ImageName }}#${IMAGE_NAME}#g" \
-        -e "s#{{ .ImageTag }}#${IMAGE_TAG}#g" \
+        -e "s#{{ .MacvtapImage }}#${MACVTAP_IMG}#g" \
         -e "s#{{ .CniMountPath }}#${CNI_MOUNT_PATH}#g" \
+        -e "s#{{ .Namespace }}#${NAMESPACE}#g" \
+        -e "s#{{ .ImagePullPolicy }}#${IMAGE_PULL_POLICY}#g" \
         ${template} > ${DESTINATION}/${name}
 done
