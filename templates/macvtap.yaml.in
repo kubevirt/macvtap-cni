@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: macvtap-cni
+  namespace: {{ .Namespace }}
 spec:
   selector:
     matchLabels:
@@ -15,22 +16,28 @@ spec:
       hostPID: true
       containers:
       - name: macvtap-cni
-        image: {{ .ImageRegistry }}/{{ .ImageName }}:{{ .ImageTag }}
+        command: [ "/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
+        envFrom:
+          - configMapRef:
+              name: macvtap-deviceplugin-config
+        image: {{ .MacvtapImage }}
+        imagePullPolicy: {{ .ImagePullPolicy }}
+        resources:
+          requests:
+            cpu: "60m"
+            memory: "30Mi"
         securityContext:
           privileged: true
-        envFrom:
-        - configMapRef:
-            name: macvtap-deviceplugin-config
         volumeMounts:
           - name: deviceplugin
             mountPath: /var/lib/kubelet/device-plugins
-        command: [ "/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
       initContainers:
       - name: install-cni
-        image: {{ .ImageRegistry }}/{{ .ImageName }}:{{ .ImageTag }}
+        command: ['cp', '/macvtap-cni', '/host/opt/cni/bin/macvtap']
+        image: {{ .MacvtapImage }}
+        imagePullPolicy: {{ .ImagePullPolicy }}
         securityContext:
           privileged: true
-        command: ['cp', '/macvtap-cni', '/host/opt/cni/bin/macvtap']
         volumeMounts:
           - name: cni
             mountPath: /host/opt/cni/bin
