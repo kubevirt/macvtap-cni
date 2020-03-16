@@ -76,13 +76,14 @@ func discoverByConfig(pluginListCh chan dpm.PluginNameList) (map[string]macvtapC
 	return config, nil
 }
 
-func discoverByLinks(pluginListCh chan dpm.PluginNameList, netNsPath string) {
+func discoverByLinks(pluginListCh chan dpm.PluginNameList, netNsPath string) error {
 	// To know when the manager is stoping, we need to read from pluginListCh.
 	// We avoid reading our own updates by using a middle channel.
-	parentListCh := make(chan []string)
+	// We buffer up to one msg because of the initial call to sendSuitableParents.
+	parentListCh := make(chan []string, 1)
 	defer close(parentListCh)
 
-	sendSuitableParents := func() {
+	sendSuitableParents := func() error {
 		var linkNames []string
 		err := ns.WithNetNSPath(netNsPath, func(_ ns.NetNS) error {
 			var err error
@@ -92,18 +93,28 @@ func discoverByLinks(pluginListCh chan dpm.PluginNameList, netNsPath string) {
 
 		if err != nil {
 			glog.Errorf("Error while finding links: %v", err)
+			return err
 		}
 
 		parentListCh <- linkNames
+		return nil
 	}
 
-	// Keep updating on changes for suitable parents, first callback is
-	// guaranteed
+	// Do an initial search to catch early permanent runtime problems
+	err := sendSuitableParents()
+	if err != nil {
+		return err
+	}
+
+	// Keep updating on changes for suitable parents.
 	stop := make(chan struct{})
 	defer close(stop)
 	go util.OnSuitableMacvtapParentEvent(
 		netNsPath,
-		sendSuitableParents,
+		// Wrapper to ignore error
+		func() {
+			sendSuitableParents()
+		},
 		stop,
 		func(err error) {
 			glog.Error(err)
@@ -116,7 +127,7 @@ func discoverByLinks(pluginListCh chan dpm.PluginNameList, netNsPath string) {
 			pluginListCh <- parentNames
 		case _, open := <-pluginListCh:
 			if !open {
-				return
+				return nil
 			}
 		}
 	}
@@ -125,7 +136,7 @@ func discoverByLinks(pluginListCh chan dpm.PluginNameList, netNsPath string) {
 func (ml *macvtapLister) Discover(pluginListCh chan dpm.PluginNameList) {
 	config, err := discoverByConfig(pluginListCh)
 	if err != nil {
-		return
+		os.Exit(1)
 	}
 
 	// Configuration is static and we don't need to do anything else
@@ -136,7 +147,10 @@ func (ml *macvtapLister) Discover(pluginListCh chan dpm.PluginNameList) {
 
 	// If there was no configuration, we setup resources based on the existing
 	// links of the host.
-	discoverByLinks(pluginListCh, ml.NetNsPath)
+	err = discoverByLinks(pluginListCh, ml.NetNsPath)
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 func (ml *macvtapLister) NewPlugin(name string) dpm.PluginInterface {
