@@ -81,10 +81,10 @@ var _ = Describe("macvtap-cni", func() {
 			})
 
 			It("THEN a macvtap custom network resource is exposed", func() {
-				quantity := 50
+				quantity := 100
 
 				expectedResourceName := v1.ResourceName(buildMacvtapResourceName(lowerDevice))
-				waitForNodeResourceAvailability(1 * time.Minute, buildMacvtapResourceName(lowerDevice))
+				waitForNodeResourceAvailability(1*time.Minute, buildMacvtapResourceName(lowerDevice))
 
 				nodes, _ := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
 				for _, node := range nodes.Items {
@@ -240,7 +240,7 @@ func waitForNodeResourceAvailability(timeout time.Duration, resourceName string)
 		Expect(err).NotTo(HaveOccurred())
 
 		for _, node := range nodeList.Items {
-			if _, ok := node.Status.Capacity[v1.ResourceName(resourceName)]; ! ok {
+			if _, ok := node.Status.Capacity[v1.ResourceName(resourceName)]; !ok {
 				return false
 			}
 		}

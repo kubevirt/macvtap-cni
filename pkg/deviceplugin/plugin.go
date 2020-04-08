@@ -3,6 +3,7 @@ package deviceplugin
 import (
 	"fmt"
 
+	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
@@ -13,34 +14,40 @@ import (
 const (
 	tapPath = "/dev/tap"
 	// Interfaces will be named as <Name><suffix>[0-<Capacity>]
-	suffix          = "Mvp"
-	defaultCapacity = 100
+	suffix = "Mvp"
+	// DefaultCapacity is the default when no capacity is provided
+	DefaultCapacity = 100
+	// DefaultMode is the default when no mode is provided
+	DefaultMode = "bridge"
 )
 
-type MacvtapDevicePlugin struct {
-	Name        string
-	Master      string
-	Mode        string
-	Capacity    int
+type macvtapDevicePlugin struct {
+	Name     string
+	Master   string
+	Mode     string
+	Capacity int
+	// NetNsPath is the path to the network namespace the plugin operates in.
+	NetNsPath   string
 	stopWatcher chan struct{}
 }
 
-func NewMacvtapDevicePlugin(name string, master string, mode string, capacity int) *MacvtapDevicePlugin {
-	return &MacvtapDevicePlugin{
+func NewMacvtapDevicePlugin(name string, master string, mode string, capacity int, netNsPath string) *macvtapDevicePlugin {
+	return &macvtapDevicePlugin{
 		Name:        name,
 		Master:      master,
 		Mode:        mode,
 		Capacity:    capacity,
+		NetNsPath:   netNsPath,
 		stopWatcher: make(chan struct{}),
 	}
 }
 
-func (mdp *MacvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
+func (mdp *macvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 	var macvtapDevs []*pluginapi.Device
 
 	var capacity = mdp.Capacity
 	if capacity <= 0 {
-		capacity = defaultCapacity
+		capacity = DefaultCapacity
 	}
 
 	for i := 0; i < capacity; i++ {
@@ -54,7 +61,7 @@ func (mdp *MacvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 	return macvtapDevs
 }
 
-func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
+func (mdp *macvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	// Initialize two arrays, one for devices offered when master exists,
 	// and no devices if master does not exist.
 	allocatableDevs := mdp.generateMacvtapDevices()
@@ -72,11 +79,17 @@ func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 
 	didMasterExist := false
 	onMasterEvent := func() {
-		doesMasterExist, err := util.LinkExists(mdp.Master)
+		var doesMasterExist bool
+		err := ns.WithNetNSPath(mdp.NetNsPath, func(_ ns.NetNS) error {
+			var err error
+			doesMasterExist, err = util.LinkExists(mdp.Master)
+			return err
+		})
 		if err != nil {
 			glog.Warningf("Error while checking on master %s: %v", mdp.Master, err)
 			return
 		}
+
 		if didMasterExist != doesMasterExist {
 			emitResponse(doesMasterExist)
 			didMasterExist = doesMasterExist
@@ -84,10 +97,11 @@ func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 	}
 
 	// Listen for events of master interface. On any, check if master a
-	// interface exists. If it does, offer up to capacity mactvtap devices. Do
+	// interface exists. If it does, offer up to capacity macvtap devices. Do
 	// not offer any otherwise.
 	util.OnLinkEvent(
 		mdp.Master,
+		mdp.NetNsPath,
 		onMasterEvent,
 		mdp.stopWatcher,
 		func(err error) {
@@ -97,7 +111,7 @@ func (mdp *MacvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 	return nil
 }
 
-func (mdp *MacvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	var response pluginapi.AllocateResponse
 
 	for _, req := range r.ContainerRequests {
@@ -113,7 +127,12 @@ func (mdp *MacvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 			// no de-allocate flow to clean up. So we attempt to delete a
 			// possibly existing existing interface before creating it to reset
 			// its state.
-			index, err := util.RecreateMacvtap(name, mdp.Master, mdp.Mode)
+			var index int
+			err := ns.WithNetNSPath(mdp.NetNsPath, func(_ ns.NetNS) error {
+				var err error
+				index, err = util.RecreateMacvtap(name, mdp.Master, mdp.Mode)
+				return err
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -133,15 +152,15 @@ func (mdp *MacvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 	return &response, nil
 }
 
-func (mdp *MacvtapDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
+func (mdp *macvtapDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	return nil, nil
 }
 
-func (mdp *MacvtapDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
+func (mdp *macvtapDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	return nil, nil
 }
 
-func (mdp *MacvtapDevicePlugin) Stop() error {
+func (mdp *macvtapDevicePlugin) Stop() error {
 	close(mdp.stopWatcher)
 	return nil
 }

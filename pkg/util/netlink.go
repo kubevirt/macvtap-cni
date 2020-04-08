@@ -3,10 +3,12 @@ package util
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 
 	"github.com/containernetworking/cni/pkg/types/current"
 
@@ -101,14 +103,80 @@ func LinkDelete(link string) error {
 	return err
 }
 
-// Listen for events on a specific interface and callback if any. The interface
-// does not have to exist. Use the stop channel to stop listening.
-func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)) {
+func isLoopback(link netlink.Link) bool {
+	return link.Attrs().Flags&net.FlagLoopback != 0
+}
+
+func isSuitableMacvtapParent(link netlink.Link) bool {
+	if isLoopback(link) {
+		return false
+	}
+
+	switch link.(type) {
+	case *netlink.Bond, *netlink.Device:
+	default:
+		return false
+	}
+
+	return true
+}
+
+// FindSuitableMacvtapParents lists all the links on the system and filters out
+// those deemed inappropriate to be used as macvtap parents.
+func FindSuitableMacvtapParents() ([]string, error) {
+	links, err := netlink.LinkList()
+	if err != nil {
+		return nil, err
+	}
+
+	linkNames := make([]string, 0)
+	for _, link := range links {
+		if isSuitableMacvtapParent(link) {
+			linkNames = append(linkNames, link.Attrs().Name)
+		}
+	}
+
+	return linkNames, nil
+}
+
+// OnLinkEvent listens for events on a specific interface and namespace, and
+// callbacks if any. See onLinkEvent for more details.
+func OnLinkEvent(name string, nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
+	matcher := func(link netlink.Link) bool {
+		return name == link.Attrs().Name
+	}
+
+	onLinkEvent(matcher, nsPath, do, stop, errcb)
+}
+
+// OnSuitableMacvtapParentEvent listens for events on any suitable macvtap
+// parent link on a given namespace and callbacks if any. See onLinkEvent
+// for more details.
+func OnSuitableMacvtapParentEvent(nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
+	onLinkEvent(isSuitableMacvtapParent, nsPath, do, stop, errcb)
+}
+
+// onLinkEvent upkeeps a subscription to netlink events and callbacks for any
+// that matches the predicate on the related link.
+// The subscription might temporarily fail. On re-subscription, the callback is
+// invoked to cover for events that might have been missed during that time.
+// That means some spurious callbacks unrelated to the predicate might happen
+// and the caller should account for it. For convenience, to avoid losing any
+// relevant information between the time of this function call (or a previous
+// time when the caller initializes state) and the time the subscription is
+// effective, the callback is also invoked upon first subscription. As a
+// summary, callback is invoked:
+//
+// * A first time, after first subscription
+// * Once every re-subscription
+// * On any event matching the predicate
+//
+func onLinkEvent(match func(netlink.Link) bool, nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
 	done := make(chan struct{})
 	defer close(done)
 
 	options := netlink.LinkSubscribeOptions{
-		ListExisting: true,
+		ListExisting: false,
 		ErrorCallback: func(err error) {
 			errcb(fmt.Errorf("Error while listening on link events: %v", err))
 		},
@@ -117,13 +185,24 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 	subscribed := false
 	var netlinkCh chan netlink.LinkUpdate
 	subscribe := func() {
+		ns, err := netns.GetFromPath(nsPath)
+		if err != nil {
+			errcb(fmt.Errorf("Could not open namespace: %v", err))
+			return
+		}
+		defer ns.Close()
+
+		options.Namespace = &ns
 		netlinkCh = make(chan netlink.LinkUpdate)
-		err := netlink.LinkSubscribeWithOptions(netlinkCh, done, options)
+		err = netlink.LinkSubscribeWithOptions(netlinkCh, done, options)
 		if err != nil {
 			errcb(fmt.Errorf("Error while subscribing for link events: %v", err))
 			return
 		}
 		subscribed = true
+
+		// Callback on every subscription
+		do()
 	}
 
 	subscribe()
@@ -135,7 +214,7 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 				subscribe()
 				continue
 			case <-stop:
-				break
+				return
 			}
 		}
 
@@ -143,12 +222,12 @@ func OnLinkEvent(name string, do func(), stop <-chan struct{}, errcb func(error)
 		select {
 		case update, subscribed = <-netlinkCh:
 			if subscribed {
-				if name == update.Link.Attrs().Name {
+				if match(update.Link) {
 					do()
 				}
 			}
 		case <-stop:
-			break
+			return
 		}
 	}
 }
@@ -250,4 +329,9 @@ func configureArp(ifaceName string) error {
 	}
 
 	return nil
+}
+
+// GetMainThreadNetNsPath returns the path of the main thread's namespace
+func GetMainThreadNetNsPath() string {
+	return fmt.Sprintf("/proc/%d/ns/net", os.Getpid())
 }
