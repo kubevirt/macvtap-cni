@@ -1,15 +1,10 @@
-v0.1.0
-
-Initial release of the macvtap-cni.
-It features static configuration only - via a config map.
+v0.2.0
+All the devices (and bonds) in each k8s node in the cluster are exposed,
+enabling the user to create macvtap interfaces on top of them.
 
 Features:
-* macvtap device plugin, with explicit configuration (#2)
-* macvtap CNI plugin is installed across the cluster (#4)
-
-Docs:
-* add README (#9)
-
+* dp: Expose link based resources by default (#11)
+* Unify template manifest (#20)
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.1.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.2.0
 ```
