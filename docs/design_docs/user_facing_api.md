@@ -129,13 +129,15 @@ spec:
 It would expose, in each of the nodes:
 ```yaml
 h1 (node has 2 interfaces from the policy iface list):
-  - bond1
-  - eth1
+  - bond1; exposed as `macvtap.network.kubevirt.io/bondedIface`
+  - eth1;  exposed as `macvtap.network.kubevirt.io/quickDataplane`
+
 h2 (node has 1 interface from the policy iface list):
-  - bond1
+  - bond1; exposed as `macvtap.network.kubevirt.io/bondedIface`
+
 h3 (not matched, exposing everything):
-  - eth0
-  - eth1
+  - eth0;  exposed as `macvtap.network.kubevirt.io/eth0`  # iface name exposed (default)
+  - eth1;  exposed as `macvtap.network.kubevirt.io/eth1`  # iface name exposed (default)
 ```
 
 An alternative model, more resource-centric, where a 1 to 1 resource / policy
@@ -169,12 +171,14 @@ interfaces in each of the nodes:
 
 ```yaml
 h1 (exposing first match from the iface list):
-  - bond1
+  - bond1; exposed as `macvtap.network.kubevirt.io/bondedIface`
+
 h2 (exposing first match from the iface list):
-  - bond1
+  - bond1; exposed as `macvtap.network.kubevirt.io/bondedIface`
+
 h3 (not matched, exposing everything):
-  - eth0
-  - eth1
+  - eth0;  exposed as `macvtap.network.kubevirt.io/eth0`  # iface name exposed (default)
+  - eth1;  exposed as `macvtap.network.kubevirt.io/eth1`  # iface name exposed (default)
 ```
 
 #### Macvtap NetworkAttachmentDefinition
