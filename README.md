@@ -91,7 +91,7 @@ spec:
   config: '{
       "cniVersion": "0.3.1",
       "name": "dataplane",
-      "type": "macvtap-cni"
+      "type": "macvtap"
       "mtu": 1500
     }'
 ```
