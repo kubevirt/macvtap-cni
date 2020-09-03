@@ -14,6 +14,8 @@ DESTINATION=${DESTINATION:-manifests}
 for template in templates/*.in; do
     name=$(basename ${template%.in})
     sed \
+        -e "s#'{{#{{#g" \
+        -e "s#}}'#}}#g" \
         -e "s#{{ .MacvtapImage }}#${MACVTAP_IMG}#g" \
         -e "s#{{ .CniMountPath }}#${CNI_MOUNT_PATH}#g" \
         -e "s#{{ .Namespace }}#${NAMESPACE}#g" \
