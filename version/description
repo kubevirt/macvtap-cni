@@ -1,10 +1,11 @@
-v0.2.0
-All the devices (and bonds) in each k8s node in the cluster are exposed,
-enabling the user to create macvtap interfaces on top of them.
+v0.3.0
 
 Features:
-* dp: Expose link based resources by default (#11)
-* Unify template manifest (#20)
+* Adding quotes in macvtap.yaml.in, namespace.yaml.in,scc.yaml.in (#24)
+
+Bugs:
+* Change vbom.ml/util dependeny with github.com/fvbommel/util (#25)
+
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.2.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.3.0
 ```
