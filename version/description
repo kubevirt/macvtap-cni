@@ -1,11 +1,8 @@
-v0.3.0
-
-Features:
-* Adding quotes in macvtap.yaml.in, namespace.yaml.in,scc.yaml.in (#24)
+v0.3.1
 
 Bugs:
-* Change vbom.ml/util dependeny with github.com/fvbommel/util (#25)
+* Fix container command quotes in macvtap.yaml.in (#27)
 
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.3.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.3.1
 ```
