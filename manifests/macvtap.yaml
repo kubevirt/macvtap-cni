@@ -16,7 +16,7 @@ spec:
       hostPID: true
       containers:
       - name: macvtap-cni
-        command: [ "/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
+        command: ["/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
         envFrom:
           - configMapRef:
               name: macvtap-deviceplugin-config
@@ -33,7 +33,7 @@ spec:
             mountPath: /var/lib/kubelet/device-plugins
       initContainers:
       - name: install-cni
-        command: ['cp', '/macvtap-cni', '/host/opt/cni/bin/macvtap']
+        command: ["cp", "/macvtap-cni", "/host/opt/cni/bin/macvtap"]
         image: quay.io/kubevirt/macvtap-cni:latest
         imagePullPolicy: Always
         securityContext:
