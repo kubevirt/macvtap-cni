@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/aktau/github-release v0.8.1
-	github.com/containernetworking/cni v0.7.1
+	github.com/containernetworking/cni v0.8.0
 	github.com/containernetworking/plugins v0.8.5
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/github-release/github-release v0.8.1 // indirect
