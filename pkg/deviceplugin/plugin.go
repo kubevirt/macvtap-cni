@@ -6,7 +6,7 @@ import (
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
-	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
+	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 
 	"github.com/kubevirt/macvtap-cni/pkg/util"
 )
