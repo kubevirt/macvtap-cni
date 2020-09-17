@@ -34,6 +34,8 @@ func TestPlugin(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	flag.Parse()
+
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -43,5 +45,4 @@ var _ = BeforeSuite(func() {
 
 func init() {
 	kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	flag.Parse()
 }

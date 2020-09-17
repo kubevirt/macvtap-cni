@@ -15,6 +15,7 @@
 package tests_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -69,8 +70,8 @@ var _ = Describe("macvtap-cni", func() {
 		Context("WHEN make cluster-sync is executed", func() {
 			It("THEN macvtap-cni daemonset is running in each k8s node", func() {
 				daemonSetNamePrefix := "macvtap-cni"
-				pods, _ := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-				nodes, _ := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+				pods, _ := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+				nodes, _ := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 				Expect(len(pods.Items)).Should(BeNumerically(">", 0))
 				Expect(len(nodes.Items)).Should(BeNumerically(">", 0))
 
@@ -86,7 +87,7 @@ var _ = Describe("macvtap-cni", func() {
 				expectedResourceName := v1.ResourceName(buildMacvtapResourceName(lowerDevice))
 				waitForNodeResourceAvailability(1*time.Minute, buildMacvtapResourceName(lowerDevice))
 
-				nodes, _ := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+				nodes, _ := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 				for _, node := range nodes.Items {
 					expectedQuantity, err := resource.ParseQuantity(strconv.Itoa(quantity))
 					Expect(err).NotTo(HaveOccurred())
@@ -145,7 +146,7 @@ var _ = Describe("macvtap-cni", func() {
 				}
 
 				BeforeEach(func() {
-					_, err := clientset.CoreV1().Pods(namespace).Create(pod1)
+					_, err := clientset.CoreV1().Pods(namespace).Create(context.TODO(), pod1, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for pod to be ready")
@@ -153,12 +154,12 @@ var _ = Describe("macvtap-cni", func() {
 				})
 
 				AfterEach(func() {
-					err := clientset.CoreV1().Pods(namespace).Delete(podName, nil)
+					err := clientset.CoreV1().Pods(namespace).Delete(context.TODO(), podName, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("SHOULD successfully get a second interface, of macvtap type, with configured MAC address", func() {
-					pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+					pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					// assert resources have been allocated
@@ -209,7 +210,7 @@ func deleteNetworkAttachmentDefinition(macvtapIfaceName string, namespace string
 	return clientset.RESTClient().
 		Delete().
 		RequestURI(fmt.Sprintf(postUrl, namespace, macvtapIfaceName)).
-		Do()
+		Do(context.TODO())
 }
 
 func provisionNetworkAttachmentDefinition(macvtapIfaceName string, lowerDeviceName string, namespace string) rest.Result {
@@ -217,7 +218,7 @@ func provisionNetworkAttachmentDefinition(macvtapIfaceName string, lowerDeviceNa
 		Post().
 		RequestURI(fmt.Sprintf(postUrl, namespace, macvtapIfaceName)).
 		Body([]byte(fmt.Sprintf(nad, macvtapIfaceName, namespace, buildMacvtapResourceName(lowerDeviceName), macvtapIfaceName))).
-		Do()
+		Do(context.TODO())
 }
 
 func filterPods(pods []v1.Pod, filterFunction func(v1.Pod) bool) []v1.Pod {
@@ -236,7 +237,7 @@ func buildMacvtapResourceName(macvtapIfaceName string) string {
 
 func waitForNodeResourceAvailability(timeout time.Duration, resourceName string) {
 	checkForResourceAvailable := func() bool {
-		nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+		nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		for _, node := range nodeList.Items {
@@ -272,7 +273,7 @@ func parseNetwork(network string) ([]reportedNetwork, error) {
 
 func waitForPodReadiness(podName string, namespace string, timeout time.Duration) {
 	isPodReady := func() bool {
-		pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+		pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred(), "Is able to GET a concreate POD")
 
 		containerStatuses := pod.Status.ContainerStatuses
