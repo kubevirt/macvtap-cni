@@ -8,25 +8,24 @@ require (
 	github.com/containernetworking/plugins v0.8.5
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/github-release/github-release v0.8.1 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1 // indirect
 	github.com/kevinburke/rest v0.0.0-20200429221318-0d2892b400f8 // indirect
-	github.com/kubevirt/device-plugin-manager v1.18.8
+	github.com/kubevirt/device-plugin-manager v0.19.2
 	github.com/mattn/go-colorable v0.1.7 // indirect
-	github.com/onsi/ginkgo v1.14.0
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo v1.14.1
+	github.com/onsi/gomega v1.10.2
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20200520041808-52d707b772fe
 	github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2 // indirect
-	golang.org/x/net v0.0.0-20200822124328-c89045814202
+	golang.org/x/net v0.0.0-20200904194848-62affa334b73
 	golang.org/x/tools v0.0.0-20200616133436-c1934b75d054
-	google.golang.org/grpc v1.31.0
+	google.golang.org/grpc v1.32.0
 	k8s.io/api v0.19.1
 	k8s.io/apimachinery v0.19.1
 	k8s.io/client-go v0.19.1
-	k8s.io/kubelet v0.18.8
+	k8s.io/kubelet v0.19.2
 )
 
 // Pinned to kubernetes-1.19.1
@@ -48,7 +47,7 @@ replace (
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.19.1
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.19.1
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.19.1
-	k8s.io/kubelet => k8s.io/kubelet v0.18.8
+	k8s.io/kubelet => k8s.io/kubelet v0.19.1
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.19.1
 	k8s.io/metrics => k8s.io/metrics v0.19.1
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.19.1

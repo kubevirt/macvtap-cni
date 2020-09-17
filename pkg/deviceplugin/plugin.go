@@ -160,6 +160,10 @@ func (mdp *macvtapDevicePlugin) GetDevicePluginOptions(context.Context, *plugina
 	return nil, nil
 }
 
+func (mdp *macvtapDevicePlugin) GetPreferredAllocation(context.Context, *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
+	return nil, nil
+}
+
 func (mdp *macvtapDevicePlugin) Stop() error {
 	close(mdp.stopWatcher)
 	return nil
