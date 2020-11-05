@@ -4,4 +4,5 @@ set -ex
 
 source ./cluster/kubevirtci.sh
 
-go test ./tests/e2e --kubeconfig $(kubevirtci::kubeconfig) -ginkgo.v
+KUBECONFIG=${KUBECONFIG:-$(kubevirtci::kubeconfig)}
+go test ./tests/e2e --kubeconfig ${KUBECONFIG} -ginkgo.v

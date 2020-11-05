@@ -24,6 +24,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,7 +66,12 @@ var nad = `
 var _ = Describe("macvtap-cni", func() {
 
 	lowerDevice := "eth0"
-	namespace := "default"
+	namespace := ""
+	BeforeEach(func() {
+		var err error
+		namespace, err = findMacvtapNamespace()
+		Expect(err).ToNot(HaveOccurred(), "Should succeed finding macvtap namespace")
+	})
 
 	Describe("macvtap-cni infrastructure", func() {
 		Context("WHEN make cluster-sync is executed", func() {
@@ -229,6 +236,21 @@ func filterPods(pods []v1.Pod, filterFunction func(v1.Pod) bool) []v1.Pod {
 		}
 	}
 	return filteredPods
+}
+
+func findMacvtapNamespace() (string, error) {
+	macvtapDaemonSetName := "macvtap-cni"
+	daemonSetList, err := clientset.ExtensionsV1beta1().DaemonSets(v1.NamespaceAll).List(context.TODO(), metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", macvtapDaemonSetName),
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to get daemonSet list in all namespaces")
+	}
+	if len(daemonSetList.Items) == 0 {
+		return "", errors.New("Failed to find macvtap daemonSet")
+	}
+
+	return daemonSetList.Items[0].GetNamespace(), nil
 }
 
 func buildMacvtapResourceName(macvtapIfaceName string) string {
