@@ -5,6 +5,9 @@ whitespace-check
 whitespace-format
 vet
 
+# Temporary build files
+build/_output
+
 # Local kubevirtci cluster
 _kubevirtci/
 

@@ -32,6 +32,16 @@ export CGO_ENABLED=0
 export GO111MODULE=on
 export GOFLAGS=-mod=vendor
 
+BIN_DIR = $(CURDIR)/build/_output/bin/
+export GOROOT=$(BIN_DIR)/go/
+export GOBIN = $(GOROOT)/bin/
+export PATH := $(GOBIN):$(PATH)
+
+GO := $(GOBIN)/go
+
+$(GO):
+	hack/install-go.sh $(BIN_DIR)
+
 .ONESHELL:
 
 all: format check
@@ -40,24 +50,24 @@ check: goimports-check whitespace-check vet test/unit
 
 format: goimports-format whitespace-format
 
-goimports-check: $(go_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
+goimports-check: $(go_sources) $(GO)
+	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
 	touch $@
 
-goimports-format: $(go_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
+goimports-format: $(go_sources) $(GO)
+	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
 	touch $@
 
-whitespace-check: $(all_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
+whitespace-check: $(all_sources) $(GO)
+	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
 	touch $@
 
 whitespace-format: $(all_sources)
-	go run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
+	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
 	touch $@
 
-vet: $(go_sources)
-	go vet ./pkg/... ./cmd/... ./tests/...
+vet: $(go_sources) $(GO)
+	$(GO) vet ./pkg/... ./cmd/... ./tests/...
 	touch $@
 
 docker-build:
@@ -78,22 +88,22 @@ cluster-down:
 cluster-sync:
 	./cluster/sync.sh
 
-test/e2e:
-	./hack/functest.sh
+test/e2e: $(GO)
+	GO=$(GO) ./hack/functest.sh
 
-test/unit:
+test/unit: $(GO)
 	@if ! [ "$$(id -u)" = 0 ]; then
 		@echo "You are not root, run this target as root please"
 		exit 1
 	fi
-	go test ./cmd/... ./pkg/... -v --ginkgo.v
+	$(GO) test ./cmd/... ./pkg/... -v --ginkgo.v
 
 manifests:
 	IMAGE_REGISTRY=$(IMAGE_REGISTRY) IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG) CNI_MOUNT_PATH=$(CNI_MOUNT_PATH) NAMESPACE=$(NAMESPACE) IMAGE_PULL_POLICY=$(IMAGE_PULL_POLICY) ./hack/generate-manifests.sh
 
-vendor:
-	go mod tidy
-	go mod vendor
+vendor: $(GO)
+	$(GO) mod tidy
+	$(GO) mod vendor
 
 prepare-patch:
 	./hack/prepare-release.sh patch
@@ -102,8 +112,8 @@ prepare-minor:
 prepare-major:
 	./hack/prepare-release.sh major
 
-$(GITHUB_RELEASE): go.mod
-	go install ./vendor/github.com/aktau/github-release
+$(GITHUB_RELEASE): go.mod $(GO)
+	$(GO) install ./vendor/github.com/aktau/github-release
 
 release: IMAGE_TAG = $(shell hack/version.sh)
 release: docker-build docker-push
