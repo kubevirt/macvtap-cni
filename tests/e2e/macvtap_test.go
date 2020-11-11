@@ -240,7 +240,7 @@ func filterPods(pods []v1.Pod, filterFunction func(v1.Pod) bool) []v1.Pod {
 
 func findMacvtapNamespace() (string, error) {
 	macvtapDaemonSetName := "macvtap-cni"
-	daemonSetList, err := clientset.ExtensionsV1beta1().DaemonSets(v1.NamespaceAll).List(context.TODO(), metav1.ListOptions{
+	daemonSetList, err := clientset.AppsV1().DaemonSets(v1.NamespaceAll).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", macvtapDaemonSetName),
 	})
 	if err != nil {
