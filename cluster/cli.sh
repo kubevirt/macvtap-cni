@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ./cluster/kubevirtci.sh
-kubevirtci::install
+source ./cluster/cluster.sh
+cluster::install
 
-$(kubevirtci::path)/cluster-up/cli.sh "$@"
+$(cluster::path)/cluster-up/cli.sh "$@"

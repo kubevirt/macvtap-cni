@@ -2,7 +2,7 @@
 
 set -ex
 
-source ./cluster/kubevirtci.sh
-kubevirtci::install
+source ./cluster/cluster.sh
+cluster::install
 
-$(kubevirtci::path)/cluster-up/down.sh
+$(cluster::path)/cluster-up/down.sh

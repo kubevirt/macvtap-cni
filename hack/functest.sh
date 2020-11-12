@@ -2,7 +2,7 @@
 
 set -ex
 
-source ./cluster/kubevirtci.sh
+source ./cluster/cluster.sh
 
-KUBECONFIG=${KUBECONFIG:-$(kubevirtci::kubeconfig)}
+KUBECONFIG=${KUBECONFIG:-$(cluster::kubeconfig)}
 ${GO} test ./tests/e2e --kubeconfig ${KUBECONFIG} -ginkgo.v
