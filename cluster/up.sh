@@ -5,7 +5,13 @@ set -ex
 source ./cluster/cluster.sh
 cluster::install
 
+export KUBVIRT_WITH_CNAO_SKIP_CONFIG=true
 $(cluster::path)/cluster-up/up.sh
+
+echo 'Deploy CNAO CR'
+./cluster/kubectl.sh create -f ./hack/cnao/cnao-cr.yaml
+echo 'Wait for cluster operator'
+./cluster/kubectl.sh wait networkaddonsconfig cluster --for condition=Available --timeout=800s
 
 set +ex
 echo '==============================================================================='
