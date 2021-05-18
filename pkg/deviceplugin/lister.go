@@ -16,10 +16,10 @@ const (
 )
 
 type macvtapConfig struct {
-	Name     string `json:"name"`
-	Master   string `json:"master"`
-	Mode     string `json:"mode"`
-	Capacity int    `json:"capacity"`
+	Name        string `json:"name"`
+	LowerDevice string `json:"lowerDevice"`
+	Mode        string `json:"mode"`
+	Capacity    int    `json:"capacity"`
 }
 
 type macvtapLister struct {
@@ -157,13 +157,13 @@ func (ml *macvtapLister) NewPlugin(name string) dpm.PluginInterface {
 	c, ok := ml.Config[name]
 	if !ok {
 		c = macvtapConfig{
-			Name:     name,
-			Master:   name,
-			Mode:     DefaultMode,
-			Capacity: DefaultCapacity,
+			Name:        name,
+			LowerDevice: name,
+			Mode:        DefaultMode,
+			Capacity:    DefaultCapacity,
 		}
 	}
 
 	glog.V(3).Infof("Creating device plugin with config %+v", c)
-	return NewMacvtapDevicePlugin(c.Name, c.Master, c.Mode, c.Capacity, ml.NetNsPath)
+	return NewMacvtapDevicePlugin(c.Name, c.LowerDevice, c.Mode, c.Capacity, ml.NetNsPath)
 }
