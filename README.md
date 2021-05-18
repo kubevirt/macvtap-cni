@@ -43,7 +43,7 @@ data:
 ```
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/kubevirt/macvtap-cni/master/examples/macvtap-deviceplugin-config.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/kubevirt/macvtap-cni/main/examples/macvtap-deviceplugin-config.yaml
 configmap "macvtap-deviceplugin-config" created
 ```
 
@@ -62,7 +62,7 @@ The macvtap CNI can be deployed using the proposed
 [daemon set](manifests/macvtap.yaml):
 
 ```
-$ kubectl apply -f https://raw.githubusercontent.com/kubevirt/macvtap-cni/master/manifests/macvtap.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/kubevirt/macvtap-cni/main/manifests/macvtap.yaml
 daemonset "macvtap-cni" created
 
 $ kubectl get pods
