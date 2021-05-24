@@ -35,12 +35,12 @@ func ModeFromString(s string) (netlink.MacvlanMode, error) {
 	}
 }
 
-func CreateMacvtap(name string, master string, mode string) (int, error) {
+func CreateMacvtap(name string, lowerDevice string, mode string) (int, error) {
 	ifindex := 0
 
-	m, err := netlink.LinkByName(master)
+	m, err := netlink.LinkByName(lowerDevice)
 	if err != nil {
-		return ifindex, fmt.Errorf("failed to lookup master %q: %v", master, err)
+		return ifindex, fmt.Errorf("failed to lookup lowerDevice %q: %v", lowerDevice, err)
 	}
 
 	nlmode, err := ModeFromString(mode)
@@ -72,12 +72,12 @@ func CreateMacvtap(name string, master string, mode string) (int, error) {
 	return ifindex, nil
 }
 
-func RecreateMacvtap(name string, master string, mode string) (int, error) {
+func RecreateMacvtap(name string, lowerDevice string, mode string) (int, error) {
 	err := LinkDelete(name)
 	if err != nil {
 		return 0, err
 	}
-	return CreateMacvtap(name, master, mode)
+	return CreateMacvtap(name, lowerDevice, mode)
 }
 
 func LinkExists(link string) (bool, error) {

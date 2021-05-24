@@ -57,8 +57,8 @@ func (s *ListAndWatchServerSendSpy) SetTrailer(m metadata.MD) {
 }
 
 var _ = Describe("Macvtap", func() {
-	var masterIfaceName string
-	var masterIface netlink.Link
+	var lowerDeviceIfaceName string
+	var lowerDeviceIface netlink.Link
 	var testNs ns.NetNS
 
 	BeforeEach(func() {
@@ -66,21 +66,21 @@ var _ = Describe("Macvtap", func() {
 		testNs, err = testutils.NewNS()
 		Expect(err).NotTo(HaveOccurred())
 
-		masterIfaceName = fmt.Sprintf("master%d", rand.Intn(100))
-		masterIface = &netlink.Dummy{
+		lowerDeviceIfaceName = fmt.Sprintf("lowerdev%d", rand.Intn(100))
+		lowerDeviceIface = &netlink.Dummy{
 			LinkAttrs: netlink.LinkAttrs{
-				Name:      masterIfaceName,
+				Name:      lowerDeviceIfaceName,
 				Namespace: netlink.NsFd(int(testNs.Fd())),
 			},
 		}
 
-		err = netlink.LinkAdd(masterIface)
+		err = netlink.LinkAdd(lowerDeviceIface)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
 		testNs.Do(func(ns ns.NetNS) error {
-			netlink.LinkDel(masterIface)
+			netlink.LinkDel(lowerDeviceIface)
 			return nil
 		})
 	})
@@ -90,7 +90,7 @@ var _ = Describe("Macvtap", func() {
 		var sendSpy *ListAndWatchServerSendSpy
 
 		BeforeEach(func() {
-			mvdp = NewMacvtapDevicePlugin(masterIfaceName, masterIfaceName, "bridge", 0, testNs.Path())
+			mvdp = NewMacvtapDevicePlugin(lowerDeviceIfaceName, lowerDeviceIfaceName, "bridge", 0, testNs.Path())
 			sendSpy = &ListAndWatchServerSendSpy{}
 			go func() {
 				err := mvdp.ListAndWatch(nil, sendSpy)
@@ -103,7 +103,7 @@ var _ = Describe("Macvtap", func() {
 		})
 
 		It("should allocate a new device upon request", func() {
-			ifaceName := masterIfaceName + "Mvp99"
+			ifaceName := lowerDeviceIfaceName + "Mvp99"
 			req := &pluginapi.AllocateRequest{
 				ContainerRequests: []*pluginapi.ContainerAllocateRequest{
 					{
@@ -132,7 +132,7 @@ var _ = Describe("Macvtap", func() {
 			Expect(dev.HostPath).To(Equal(dev.ContainerPath))
 		})
 
-		Context("when master device does not exist", func() {
+		Context("when lower device does not exist", func() {
 			It("should not advertise devices", func() {
 				By("first advertising healthy devices", func() {
 					Eventually(func() int {
@@ -142,9 +142,9 @@ var _ = Describe("Macvtap", func() {
 					Expect(sendSpy.last.Devices).To(HaveLen(100))
 				})
 
-				By("then deleting the master device", func() {
+				By("then deleting the lower device", func() {
 					err := testNs.Do(func(ns ns.NetNS) error {
-						return util.LinkDelete(masterIfaceName)
+						return util.LinkDelete(lowerDeviceIfaceName)
 					})
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -183,10 +183,10 @@ var _ = Describe("Macvtap", func() {
 			resourceName := "dataplane"
 			mode := "vepa"
 			capacity := 30
-			config := `[{"name":"%s","master":"%s","mode":"%s","capacity":%d}]`
+			config := `[{"name":"%s","lowerDevice":"%s","mode":"%s","capacity":%d}]`
 
 			BeforeEach(func() {
-				config = fmt.Sprintf(config, resourceName, masterIfaceName, mode, capacity)
+				config = fmt.Sprintf(config, resourceName, lowerDeviceIfaceName, mode, capacity)
 				os.Setenv(ConfigEnvironmentVariable, config)
 			})
 
@@ -200,7 +200,7 @@ var _ = Describe("Macvtap", func() {
 
 				plugin := lister.NewPlugin(resourceName)
 				Expect(plugin.(*macvtapDevicePlugin).Name).To(Equal(resourceName))
-				Expect(plugin.(*macvtapDevicePlugin).Master).To(Equal(masterIfaceName))
+				Expect(plugin.(*macvtapDevicePlugin).LowerDevice).To(Equal(lowerDeviceIfaceName))
 				Expect(plugin.(*macvtapDevicePlugin).Mode).To(Equal(mode))
 				Expect(plugin.(*macvtapDevicePlugin).Capacity).To(Equal(capacity))
 			})
@@ -238,7 +238,7 @@ var _ = Describe("Macvtap", func() {
 
 					plugin := lister.NewPlugin(parentName)
 					Expect(plugin.(*macvtapDevicePlugin).Name).To(Equal(parentName))
-					Expect(plugin.(*macvtapDevicePlugin).Master).To(Equal(parentName))
+					Expect(plugin.(*macvtapDevicePlugin).LowerDevice).To(Equal(parentName))
 					Expect(plugin.(*macvtapDevicePlugin).Mode).To(Equal(DefaultMode))
 					Expect(plugin.(*macvtapDevicePlugin).Capacity).To(Equal(DefaultCapacity))
 				})

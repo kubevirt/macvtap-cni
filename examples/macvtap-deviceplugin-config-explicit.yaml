@@ -6,7 +6,7 @@ data:
   DP_MACVTAP_CONF: >-
     [ {
         "name" : "eth0",
-        "master" : "eth0",
+        "lowerDevice" : "eth0",
         "mode": "bridge",
         "capacity" : 50
      } ]

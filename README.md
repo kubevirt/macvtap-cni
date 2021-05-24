@@ -20,7 +20,7 @@ The value is a json array and each element of the array is a separate resource
 to be made available:
 
 * `name` (string, required) the name of the resource
-* `master` (string, required) the name of the macvtap lower link
+* `lowerDevice` (string, required) the name of the macvtap lower link
 * `mode` (string, optional, default=bridge) the macvtap operating mode
 * `capacity` (uint, optional, default=100) the capacity of the resource
 
@@ -36,7 +36,7 @@ data:
   DP_MACVTAP_CONF: |
     [ {
         "name" : "dataplane",
-        "master" : "eth0",
+        "lowerDevice" : "eth0",
         "mode": "bridge",
         "capacity" : 50
     } ]
