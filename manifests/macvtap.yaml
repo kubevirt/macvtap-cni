@@ -14,6 +14,7 @@ spec:
     spec:
       hostNetwork: true
       hostPID: true
+      priorityClassName: system-node-critical
       containers:
       - name: macvtap-cni
         command: ["/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
