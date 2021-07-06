@@ -4,8 +4,8 @@ go 1.13
 
 require (
 	github.com/aktau/github-release v0.8.1
-	github.com/containernetworking/cni v0.8.0
-	github.com/containernetworking/plugins v0.8.5
+	github.com/containernetworking/cni v0.8.1
+	github.com/containernetworking/plugins v0.9.1
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/github-release/github-release v0.8.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -14,13 +14,13 @@ require (
 	github.com/kubevirt/device-plugin-manager v0.19.2
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/onsi/ginkgo v1.14.1
-	github.com/onsi/gomega v1.10.2
+	github.com/onsi/gomega v1.10.3
 	github.com/pkg/errors v0.9.1
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
-	github.com/vishvananda/netlink v1.1.0
-	github.com/vishvananda/netns v0.0.0-20200520041808-52d707b772fe
+	github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852
+	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae
 	github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2 // indirect
-	golang.org/x/net v0.0.0-20200904194848-62affa334b73
+	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	golang.org/x/tools v0.0.0-20200616133436-c1934b75d054
 	google.golang.org/grpc v1.32.0
 	k8s.io/api v0.19.1
