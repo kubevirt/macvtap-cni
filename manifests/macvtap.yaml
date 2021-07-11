@@ -37,6 +37,10 @@ spec:
         command: ["cp", "/macvtap-cni", "/host/opt/cni/bin/macvtap"]
         image: quay.io/kubevirt/macvtap-cni:latest
         imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "15Mi"
         securityContext:
           privileged: true
         volumeMounts:
