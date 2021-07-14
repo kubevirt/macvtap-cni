@@ -1,9 +1,7 @@
-v0.5.0
-
+v0.5.1
 Features:
-* Link pods to priority classes #42
-* Rename "master" API #41 to use inclusive language
-
+* install-cni, Add resources requests for initContainer
+* dependencies: use containernetworking/plugins v0.9.1
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.5.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.5.1
 ```
