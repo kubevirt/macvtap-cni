@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/vishvananda/netlink"
@@ -14,12 +13,6 @@ import (
 
 	"github.com/containernetworking/plugins/pkg/ip"
 	"github.com/containernetworking/plugins/pkg/ns"
-	"github.com/containernetworking/plugins/pkg/utils/sysctl"
-)
-
-const (
-	// IPv4InterfaceArpProxySysctlTemplate allows proxy_arp on a given interface
-	IPv4InterfaceArpProxySysctlTemplate = "net.ipv4.conf.%s.proxy_arp"
 )
 
 func ModeFromString(s string) (netlink.MacvlanMode, error) {
@@ -275,11 +268,6 @@ func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *n
 			return err
 		}
 
-		// set proxy_arp on the interface
-		if err := configureArp(newIfaceName); err != nil {
-			return err
-		}
-
 		if err := netlink.LinkSetUp(renamedMacvtapIface); err != nil {
 			return fmt.Errorf("failed to set macvtap iface up: %v", err)
 		}
@@ -314,21 +302,6 @@ func renameInterface(currentIface netlink.Link, newIfaceName string) (netlink.Li
 	renamedMacvtapIface.Attrs().Name = newIfaceName
 
 	return renamedMacvtapIface, nil
-}
-
-func configureArp(ifaceName string) error {
-	// For sysctl, dots are replaced with forward slashes
-	ifaceNameAllowingDots := strings.Replace(ifaceName, ".", "/", -1)
-
-	// TODO: duplicate following lines for ipv6 support, when it will be added in other places
-	ipv4SysctlValueName := fmt.Sprintf(IPv4InterfaceArpProxySysctlTemplate, ifaceNameAllowingDots)
-	_, err := sysctl.Sysctl(ipv4SysctlValueName, "1")
-	if err != nil {
-		// the link will be removed in the CmdAdd deferred cleanup action
-		return fmt.Errorf("failed to set proxy_arp on newly added interface %q: %v", ifaceName, err)
-	}
-
-	return nil
 }
 
 // GetMainThreadNetNsPath returns the path of the main thread's namespace
