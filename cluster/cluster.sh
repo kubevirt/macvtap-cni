@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-
-export KUBEVIRT_PROVIDER="${KUBEVIRT_PROVIDER:-k8s-1.19}"
-export KUBEVIRTCI_TAG="2011240648-fb5563f"
+export KUBEVIRT_PROVIDER="${KUBEVIRT_PROVIDER:-k8s-1.20}"
+export KUBEVIRTCI_TAG=$(curl -L -Ss https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirtci/latest)
+export KUBEVIRTCI_RUNTIME=${OCI_BIN:-docker}
 
 KUBEVIRTCI_REPO='https://github.com/kubevirt/kubevirtci.git'
 # The CLUSTER_PATH var is used in cluster folder and points to the _kubevirtci where the cluster is deployed from.

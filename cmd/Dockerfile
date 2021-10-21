@@ -1,6 +1,6 @@
 # Multi-stage dockerfile building a container image with both binaries included
 
-FROM golang:1.13 as builder
+FROM golang:1.16 as builder
 ENV GOPATH=/go
 WORKDIR /go/src/github.com/kubevirt/macvtap-cni
 COPY . .
