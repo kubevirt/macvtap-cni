@@ -1,7 +1,11 @@
-v0.5.1
+v0.6.0
+
 Features:
-* install-cni, Add resources requests for initContainer
-* dependencies: use containernetworking/plugins v0.9.1
+* build, podman: enable container runtime
+* build: bump k8s provider to 1.20
+* build: bump k8s API to 1.20
+* cni: stop setting ARP proxy
+
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.5.1
+docker pull quay.io/kubevirt/macvtap-cni:v0.6.0
 ```
