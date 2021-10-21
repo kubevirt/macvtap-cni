@@ -21,7 +21,7 @@ main() {
 
     make cluster-down
     make cluster-up
-    trap teardown EXIT SIGINT SIGTERM SIGSTOP
+    trap teardown EXIT SIGINT SIGTERM
     make cluster-sync
     make test/e2e
 }
