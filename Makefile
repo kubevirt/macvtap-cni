@@ -14,6 +14,8 @@ TARGETS = \
 	whitespace-check \
 	vet
 
+OCI_BIN ?= docker
+
 # tools
 GITHUB_RELEASE ?= $(GOBIN)/github-release
 
@@ -71,13 +73,17 @@ vet: $(go_sources) $(GO)
 	touch $@
 
 docker-build:
-	docker build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
+	$(OCI_BIN) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
 
 docker-push:
-	docker push ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+ifeq ($(OCI_BIN),podman)
+	$(OCI_BIN) push --tls-verify=false ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+else
+	$(OCI_BIN) push ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+endif
 
 docker-tag-latest:
-	docker tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+	$(OCI_BIN) tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
 cluster-up:
 	./cluster/up.sh
