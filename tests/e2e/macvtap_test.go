@@ -184,7 +184,9 @@ var _ = Describe("macvtap-cni", func() {
 
 					// macvtap iface is created as a secondary iface
 					macvtapNetwork := networks[1]
-					Expect(macvtapNetwork.Name).To(Equal(networkAttachmentDefinitionName))
+					Expect(macvtapNetwork.Name).To(BeElementOf(
+						networkAttachmentDefinitionName,
+						multiNetSpecNetworkName(namespace, networkAttachmentDefinitionName)))
 					Expect(macvtapNetwork.Interface).To(Equal("net1"))
 					Expect(macvtapNetwork.Mac).NotTo(BeEmpty())
 				})
@@ -309,4 +311,8 @@ func waitForPodReadiness(podName string, namespace string, timeout time.Duration
 		return len(containerStatuses) > 0 && readyContainers == len(containerStatuses)
 	}
 	Eventually(isPodReady, timeout, 1*time.Second).Should(BeTrue())
+}
+
+func multiNetSpecNetworkName(networkNamespace string, networkName string) string {
+	return fmt.Sprintf("%s/%s", networkNamespace, networkName)
 }
