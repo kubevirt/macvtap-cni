@@ -170,5 +170,5 @@ spec:
     command: ["/bin/sleep", "123"]
     resources:
       limits:
-        macvtap.network.kubevirt.io/dataplane: 1 
+        macvtap.network.kubevirt.io/dataplane: 1
 ```
