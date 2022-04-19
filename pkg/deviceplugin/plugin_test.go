@@ -12,6 +12,7 @@ import (
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/metadata"
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 
@@ -216,45 +217,92 @@ var _ = Describe("Macvtap", func() {
 			})
 
 			It("SHOULD update the list of available resources", func() {
-				const parentName = "bond0"
+				const bondName = "bond0"
+				const bridgeName = "br0"
+				const tunName = "tun0"
 
 				By("initially reporting the appropriate list of resources", func() {
-					Eventually(pluginListCh).Should(Receive(BeEmpty()))
-					Consistently(pluginListCh).ShouldNot(Receive(Not(BeEmpty())))
+
+					err := testNs.Do(func(ns ns.NetNS) error {
+						return netlink.LinkAdd(&netlink.Tuntap{
+							LinkAttrs: netlink.LinkAttrs{
+								Name: tunName,
+							},
+							Mode: unix.IFF_TUN,
+						})
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(pluginListCh).Should(Receive(ConsistOf(lowerDeviceIfaceName)))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(ConsistOf(lowerDeviceIfaceName))))
 				})
 
 				By("adding a new resource when a suitable macvtap parent appears", func() {
-					parent := netlink.NewLinkBond(
+					bond := netlink.NewLinkBond(
 						netlink.LinkAttrs{
-							Name:      parentName,
+							Name:      bondName,
 							Namespace: netlink.NsFd(int(testNs.Fd())),
 						},
 					)
-					err := netlink.LinkAdd(parent)
+					err := netlink.LinkAdd(bond)
 					Expect(err).NotTo(HaveOccurred())
 
-					Eventually(pluginListCh).Should(Receive(ConsistOf(parentName)))
-					Consistently(pluginListCh).ShouldNot(Receive(Not(ConsistOf(parentName))))
+					Eventually(pluginListCh).Should(Receive(ConsistOf(lowerDeviceIfaceName, bondName)))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(ConsistOf(lowerDeviceIfaceName, bondName))))
 
-					plugin := lister.NewPlugin(parentName)
-					Expect(plugin.(*macvtapDevicePlugin).Name).To(Equal(parentName))
-					Expect(plugin.(*macvtapDevicePlugin).LowerDevice).To(Equal(parentName))
+					plugin := lister.NewPlugin(bondName)
+					Expect(plugin.(*macvtapDevicePlugin).Name).To(Equal(bondName))
+					Expect(plugin.(*macvtapDevicePlugin).LowerDevice).To(Equal(bondName))
 					Expect(plugin.(*macvtapDevicePlugin).Mode).To(Equal(DefaultMode))
 					Expect(plugin.(*macvtapDevicePlugin).Capacity).To(Equal(DefaultCapacity))
 				})
 
-				By("removing the resource when a suitable macvtap parent disappears", func() {
-					err := testNs.Do(func(ns ns.NetNS) error {
-						parent, err := netlink.LinkByName(parentName)
+				By("removing the resource when a suitable macvtap parent added to the bridge", func() {
+					err := netlink.LinkAdd(&netlink.Bridge{
+						LinkAttrs: netlink.LinkAttrs{
+							Name:      bridgeName,
+							Namespace: netlink.NsFd(int(testNs.Fd())),
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					err = testNs.Do(func(ns ns.NetNS) error {
+						bridge, err := netlink.LinkByName(bridgeName)
 						if err == nil {
-							err = netlink.LinkDel(parent)
+							bond, err := netlink.LinkByName(bondName)
+							if err == nil {
+								err = netlink.LinkSetMaster(bond, bridge)
+							}
 						}
 						return err
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					Eventually(pluginListCh).Should(Receive(BeEmpty()))
-					Consistently(pluginListCh).ShouldNot(Receive(Not(BeEmpty())))
+					Eventually(pluginListCh).Should(Receive(ConsistOf(lowerDeviceIfaceName, bridgeName)))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(ConsistOf(lowerDeviceIfaceName, bridgeName))))
+				})
+
+				By("removing the resource when a suitable macvtap parent added to the bridge", func() {
+
+					err := testNs.Do(func(ns ns.NetNS) error {
+						bridge, err := netlink.LinkByName(bridgeName)
+						if err == nil {
+							err = netlink.LinkDel(bridge)
+						}
+						bond, err := netlink.LinkByName(bondName)
+						if err == nil {
+							err = netlink.LinkDel(bond)
+						}
+						tun, err := netlink.LinkByName(tunName)
+						if err == nil {
+							err = netlink.LinkDel(tun)
+						}
+						return err
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(pluginListCh).Should(Receive(ConsistOf(lowerDeviceIfaceName)))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(ConsistOf(lowerDeviceIfaceName))))
 				})
 			})
 		})

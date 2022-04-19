@@ -8,6 +8,7 @@ import (
 
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"golang.org/x/sys/unix"
 
 	"github.com/containernetworking/cni/pkg/types/current"
 
@@ -105,9 +106,34 @@ func isSuitableMacvtapParent(link netlink.Link) bool {
 		return false
 	}
 
+	if link.Attrs().MasterIndex != 0 {
+		return false
+	}
+
 	switch link.(type) {
-	case *netlink.Bond, *netlink.Device:
+
+	case
+		*netlink.Device,
+		*netlink.Vlan,
+		*netlink.Veth,
+		*netlink.Dummy,
+		*netlink.Ifb,
+		*netlink.Macvlan,
+		*netlink.Macvtap,
+		*netlink.Bridge,
+		*netlink.Bond,
+		*netlink.Vxlan,
+		*netlink.Gretap:
+	case
+		*netlink.Tuntap:
+		if tap := link.(*netlink.Tuntap); tap.Mode != unix.IFF_TAP {
+			return false
+		}
 	default:
+		return false
+	}
+
+	if link.Attrs().MasterIndex != 0 {
 		return false
 	}
 
