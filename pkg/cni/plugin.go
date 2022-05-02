@@ -16,6 +16,7 @@ package cni
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"runtime"
@@ -27,7 +28,9 @@ import (
 	"github.com/containernetworking/cni/pkg/types/current"
 
 	"github.com/containernetworking/plugins/pkg/ip"
+	"github.com/containernetworking/plugins/pkg/ipam"
 	"github.com/containernetworking/plugins/pkg/ns"
+	"github.com/containernetworking/plugins/pkg/utils/sysctl"
 )
 
 // A NetConf structure represents a Multus network attachment definition configuration
@@ -90,6 +93,8 @@ func CmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
+	isLayer3 := netConf.IPAM.Type != ""
+
 	netns, err := ns.GetNS(args.Netns)
 	if err != nil {
 		return fmt.Errorf("failed to open netns %q: %v", netns, err)
@@ -108,9 +113,48 @@ func CmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
+	// Assume L2 interface only
 	result := &current.Result{
 		CNIVersion: cniVersion,
 		Interfaces: []*current.Interface{macvtapInterface},
+	}
+
+	if isLayer3 {
+		// run the IPAM plugin and get back the config to apply
+		r, err := ipam.ExecAdd(netConf.IPAM.Type, args.StdinData)
+		if err != nil {
+			return err
+		}
+
+		// Invoke ipam del if err to avoid ip leak
+		defer func() {
+			if err != nil {
+				ipam.ExecDel(netConf.IPAM.Type, args.StdinData)
+			}
+		}()
+
+		// Convert whatever the IPAM result was into the current Result type
+		ipamResult, err := current.NewResultFromResult(r)
+		if err != nil {
+			return err
+		}
+
+		if len(ipamResult.IPs) == 0 {
+			return errors.New("IPAM plugin returned missing IP config")
+		}
+
+		result.IPs = ipamResult.IPs
+		result.Routes = ipamResult.Routes
+		result.DNS = ipamResult.DNS
+
+		err = netns.Do(func(_ ns.NetNS) error {
+			_, _ = sysctl.Sysctl(fmt.Sprintf("net/ipv4/conf/%s/arp_notify", args.IfName), "1")
+
+			if err := ipam.ConfigureIface(args.IfName, ipamResult); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
 
 	return types.PrintResult(result, cniVersion)
@@ -118,13 +162,23 @@ func CmdAdd(args *skel.CmdArgs) error {
 
 // CmdDel - CNI plugin Interface
 func CmdDel(args *skel.CmdArgs) error {
+	netConf, _, err := loadConf(args.StdinData)
+	isLayer3 := netConf.IPAM.Type != ""
+
+	if isLayer3 {
+		err = ipam.ExecDel(netConf.IPAM.Type, args.StdinData)
+		if err != nil {
+			return err
+		}
+	}
+
 	if args.Netns == "" {
 		return nil
 	}
 
 	// There is a netns so try to clean up. Delete can be called multiple times
 	// so don't return an error if the device is already removed.
-	err := ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
+	err = ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 
 		if err := ip.DelLinkByName(args.IfName); err != nil {
 			if err != ip.ErrLinkNotFound {
