@@ -14,7 +14,7 @@ TARGETS = \
 	whitespace-check \
 	vet
 
-OCI_BIN ?= docker
+OCI_BIN := $(shell ./hack/detect_cri.sh)
 
 # tools
 GITHUB_RELEASE ?= $(GOBIN)/github-release
@@ -73,7 +73,7 @@ vet: $(go_sources) $(GO)
 	touch $@
 
 docker-build:
-	$(OCI_BIN) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
+	$(OCI_BIN) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f cmd/Dockerfile .
 
 docker-push:
 ifeq ($(OCI_BIN),podman)
