@@ -16,10 +16,10 @@ require (
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63
 	golang.org/x/tools v0.0.0-20210106214847-113979e3529a
 	google.golang.org/grpc v1.32.0
-	k8s.io/api v0.21.11
-	k8s.io/apimachinery v0.21.11
-	k8s.io/client-go v0.21.11
-	k8s.io/kubelet v0.21.11
+	k8s.io/api v0.23.6
+	k8s.io/apimachinery v0.23.6
+	k8s.io/client-go v0.23.6
+	k8s.io/kubelet v0.23.6
 )
 
 require (
