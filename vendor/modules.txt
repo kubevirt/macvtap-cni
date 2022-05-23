@@ -326,7 +326,7 @@ gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
-# k8s.io/api v0.21.11 => k8s.io/api v0.21.11
+# k8s.io/api v0.23.6 => k8s.io/api v0.21.11
 ## explicit; go 1.16
 k8s.io/api/admissionregistration/v1
 k8s.io/api/admissionregistration/v1beta1
@@ -371,7 +371,7 @@ k8s.io/api/scheduling/v1beta1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
-# k8s.io/apimachinery v0.21.11 => k8s.io/apimachinery v0.21.11
+# k8s.io/apimachinery v0.23.6 => k8s.io/apimachinery v0.21.11
 ## explicit; go 1.16
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/api/meta
@@ -409,7 +409,7 @@ k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/client-go v0.21.11 => k8s.io/client-go v0.21.11
+# k8s.io/client-go v0.23.6 => k8s.io/client-go v0.21.11
 ## explicit; go 1.16
 k8s.io/client-go/applyconfigurations/admissionregistration/v1
 k8s.io/client-go/applyconfigurations/admissionregistration/v1beta1
@@ -522,7 +522,7 @@ k8s.io/client-go/util/workqueue
 # k8s.io/klog/v2 v2.9.0
 ## explicit; go 1.13
 k8s.io/klog/v2
-# k8s.io/kubelet v0.21.11 => k8s.io/kubelet v0.21.11
+# k8s.io/kubelet v0.23.6 => k8s.io/kubelet v0.21.11
 ## explicit; go 1.16
 k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1
 # k8s.io/utils v0.0.0-20211116205334-6203023598ed
