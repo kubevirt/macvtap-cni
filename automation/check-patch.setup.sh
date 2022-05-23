@@ -12,8 +12,8 @@ export PATH=${GOPATH}/bin:${GOROOT}/bin:${PATH}
 export GOBIN=${GOROOT}/bin/
 mkdir -p $GOBIN
 
-echo 'Install Go 1.16'
-export GIMME_GO_VERSION=1.16
+echo 'Install Go 1.17'
+export GIMME_GO_VERSION=1.17
 GIMME=/tmp/macvtap-cni/go/gimme
 mkdir -p $GIMME
 curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | HOME=${GIMME} bash >> ${GIMME}/gimme.sh
