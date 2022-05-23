@@ -16,3 +16,5 @@ seLinuxContext:
   type: RunAsAny
 users:
   - system:serviceaccount:{{ .Namespace }}:macvtap-cni
+volumes:
+  - hostPath
