@@ -1,11 +1,18 @@
-v0.7.0
+v0.8.0
+
+Mainly bumps golang to 1.17, and updates the Kubernetes dependencies to 1.23.
 
 Features:
-* build: bump k8s dependencies to k8s-1.21.11
+* build: update k8s dependencies to 1.23.6
+* ci: use golang-1.17
+* build: use a golang 1.17 builder img
+* build: bump to golang 1.17
+* podman: Use quay full image name
+* cluster-up: Use k8s-1.23
 Bugs:
-* config, scc: add required parameters
-Docs:
-* Fix the NetworkAttachmentDefinition example
+* ci: ensure manifests are in synch with the templates
+* deployment: synchronize the SCC manifest w/ the template
+* config, scc: add volume parameter
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.7.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.8.0
 ```
