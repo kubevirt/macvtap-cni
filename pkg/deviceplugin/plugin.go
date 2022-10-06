@@ -157,7 +157,7 @@ func (mdp *macvtapDevicePlugin) PreStartContainer(context.Context, *pluginapi.Pr
 }
 
 func (mdp *macvtapDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
-	return nil, nil
+	return &pluginapi.DevicePluginOptions{}, nil
 }
 
 func (mdp *macvtapDevicePlugin) GetPreferredAllocation(context.Context, *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
