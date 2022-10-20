@@ -177,9 +177,10 @@ var _ = Describe("macvtap-cni", func() {
 					Expect(theContainer.Resources.Limits).To(Equal(buildMacvtapResourceRequest(lowerDevice, 1)))
 
 					// assert MAC address is found on the second interface
-					podNetworks := pod.Annotations[networkStatus]
+					podNetworks, wasAnnotationFound := pod.Annotations[networkStatus]
+					Expect(wasAnnotationFound).To(BeTrue())
 					networks, err := parseNetwork(podNetworks)
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred(), netStatusAnnotationErrorDescription(podNetworks))
 					Expect(networks).To(HaveLen(2))
 
 					// macvtap iface is created as a secondary iface
@@ -214,6 +215,10 @@ var _ = Describe("macvtap-cni", func() {
 		})
 	})
 })
+
+func netStatusAnnotationErrorDescription(podNetworks string) string {
+	return fmt.Sprintf("should have been able to parse annotation: %s", podNetworks)
+}
 
 func deleteNetworkAttachmentDefinition(macvtapIfaceName string, namespace string) rest.Result {
 	return clientset.RESTClient().
@@ -291,6 +296,9 @@ func buildMacvtapResourceRequest(resourceName string, quantity int) v1.ResourceL
 // Parse the json network reported by Multus in the networks-status annotations
 func parseNetwork(network string) ([]reportedNetwork, error) {
 	var reportedNetwork []reportedNetwork
+	if network == "" {
+		network = "[]"
+	}
 	err := json.Unmarshal([]byte(network), &reportedNetwork)
 	return reportedNetwork, err
 }
