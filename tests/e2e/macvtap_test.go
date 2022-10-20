@@ -179,7 +179,7 @@ var _ = Describe("macvtap-cni", func() {
 					// assert MAC address is found on the second interface
 					podNetworks := pod.Annotations[networkStatus]
 					networks, err := parseNetwork(podNetworks)
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred(), netStatusAnnotationErrorDescription(podNetworks))
 					Expect(networks).To(HaveLen(2))
 
 					// macvtap iface is created as a secondary iface
@@ -214,6 +214,10 @@ var _ = Describe("macvtap-cni", func() {
 		})
 	})
 })
+
+func netStatusAnnotationErrorDescription(podNetworks string) string {
+	return fmt.Sprintf("should have been able to parse annotation: %s", podNetworks)
+}
 
 func deleteNetworkAttachmentDefinition(macvtapIfaceName string, namespace string) rest.Result {
 	return clientset.RESTClient().
