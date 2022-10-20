@@ -1,10 +1,14 @@
-v0.9.0
-Release a macvtap-cni whose device-plugin implementation
-works for Kubernetes-1.25.
+v0.10.0
+Version v0.9.0 unfortunately broke the device-plugin registration for k8s-1.25
+instead of fixing it.
+This new version actually fixes the device-plugin registration order, and also
+fixes a nil pointer that was causing the macvtap-cni pods to crash-loop. 
 
+Features:
+* build, vendor: bump to k8s-1.24
 Bugs:
-* device-plugin, k8s-1.25: consume 1.19.3
-* build: address dependabots concerns in the gopkg.in/yaml.v3 module
+* device plugin: fix registration order for k8s-1.25
+* Fix nil pointer error for k8s 1.25
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.9.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.10.0
 ```
