@@ -177,7 +177,8 @@ var _ = Describe("macvtap-cni", func() {
 					Expect(theContainer.Resources.Limits).To(Equal(buildMacvtapResourceRequest(lowerDevice, 1)))
 
 					// assert MAC address is found on the second interface
-					podNetworks := pod.Annotations[networkStatus]
+					podNetworks, wasAnnotationFound := pod.Annotations[networkStatus]
+					Expect(wasAnnotationFound).To(BeTrue())
 					networks, err := parseNetwork(podNetworks)
 					Expect(err).NotTo(HaveOccurred(), netStatusAnnotationErrorDescription(podNetworks))
 					Expect(networks).To(HaveLen(2))
