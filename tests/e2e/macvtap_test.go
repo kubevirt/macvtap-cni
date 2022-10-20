@@ -295,6 +295,9 @@ func buildMacvtapResourceRequest(resourceName string, quantity int) v1.ResourceL
 // Parse the json network reported by Multus in the networks-status annotations
 func parseNetwork(network string) ([]reportedNetwork, error) {
 	var reportedNetwork []reportedNetwork
+	if network == "" {
+		network = "[]"
+	}
 	err := json.Unmarshal([]byte(network), &reportedNetwork)
 	return reportedNetwork, err
 }
