@@ -35,7 +35,7 @@ import (
 const (
 	macvtapResource = "macvtap.network.kubevirt.io"
 	networkResource = "k8s.v1.cni.cncf.io/networks"
-	networkStatus   = "k8s.v1.cni.cncf.io/networks-status"
+	networkStatus   = "k8s.v1.cni.cncf.io/network-status"
 )
 
 type reportedNetwork struct {
