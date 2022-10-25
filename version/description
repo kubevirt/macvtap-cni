@@ -1,14 +1,9 @@
-v0.10.0
-Version v0.9.0 unfortunately broke the device-plugin registration for k8s-1.25
-instead of fixing it.
-This new version actually fixes the device-plugin registration order, and also
-fixes a nil pointer that was causing the macvtap-cni pods to crash-loop. 
+v0.10.1
+Read the correct `network-status` annotation in e2e tests.
 
-Features:
-* build, vendor: bump to k8s-1.24
 Bugs:
-* device plugin: fix registration order for k8s-1.25
-* Fix nil pointer error for k8s 1.25
+* e2e, multi-net: use non-deprecated network-status annot
+
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.10.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.10.1
 ```
