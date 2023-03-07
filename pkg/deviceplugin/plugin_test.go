@@ -258,5 +258,50 @@ var _ = Describe("Macvtap", func() {
 				})
 			})
 		})
+
+		When("provided not provided a configuration", func() {
+			It("SHOULD update the list of available resources", func() {
+				const parentName = "bond0"
+
+				By("initially reporting the appropriate list of resources", func() {
+					Eventually(pluginListCh).Should(Receive(BeEmpty()))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(BeEmpty())))
+				})
+
+				By("adding a new resource when a suitable macvtap parent appears", func() {
+					parent := netlink.NewLinkBond(
+						netlink.LinkAttrs{
+							Name:      parentName,
+							Namespace: netlink.NsFd(int(testNs.Fd())),
+						},
+					)
+					err := netlink.LinkAdd(parent)
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(pluginListCh).Should(Receive(ConsistOf(parentName)))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(ConsistOf(parentName))))
+
+					plugin := lister.NewPlugin(parentName)
+					Expect(plugin.(*macvtapDevicePlugin).Name).To(Equal(parentName))
+					Expect(plugin.(*macvtapDevicePlugin).LowerDevice).To(Equal(parentName))
+					Expect(plugin.(*macvtapDevicePlugin).Mode).To(Equal(DefaultMode))
+					Expect(plugin.(*macvtapDevicePlugin).Capacity).To(Equal(DefaultCapacity))
+				})
+
+				By("removing the resource when a suitable macvtap parent disappears", func() {
+					err := testNs.Do(func(ns ns.NetNS) error {
+						parent, err := netlink.LinkByName(parentName)
+						if err == nil {
+							err = netlink.LinkDel(parent)
+						}
+						return err
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(pluginListCh).Should(Receive(BeEmpty()))
+					Consistently(pluginListCh).ShouldNot(Receive(Not(BeEmpty())))
+				})
+			})
+		})
 	})
 })

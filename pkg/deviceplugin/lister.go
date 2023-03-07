@@ -42,7 +42,11 @@ func readConfig() (map[string]macvtapConfig, error) {
 	var config []macvtapConfig
 	configMap := make(map[string]macvtapConfig)
 
-	configEnv := os.Getenv(ConfigEnvironmentVariable)
+	configEnv, isEnvVarDefined := os.LookupEnv(ConfigEnvironmentVariable)
+	if !isEnvVarDefined {
+		return map[string]macvtapConfig{}, nil
+	}
+
 	err := json.Unmarshal([]byte(configEnv), &config)
 	if err != nil {
 		return configMap, err
