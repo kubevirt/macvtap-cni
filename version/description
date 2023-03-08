@@ -1,9 +1,22 @@
-v0.10.1
-Read the correct `network-status` annotation in e2e tests.
+v0.11.0
 
-Bugs:
-* e2e, multi-net: use non-deprecated network-status annot
+This minor release features dependency updates addressing the following
+security issues:
+- https://github.com/kubevirt/macvtap-cni/security/dependabot/3
+- https://github.com/kubevirt/macvtap-cni/security/dependabot/5
+- https://github.com/kubevirt/macvtap-cni/security/dependabot/8
+- https://github.com/kubevirt/macvtap-cni/security/dependabot/4
 
+It also allows the user to template the name of the ConfigMap holding the
+device plugin configuration.
+
+Features:
+* manifests: template the device plugin config map name
+Dependency updates:
+* build(deps): bump golang.org/x/net
+* build(deps): bump golang.org/x/sys
+* build(deps): bump github.com/emicklei/go-restful
+* ci: bump to kubevirtci k8s-1.24
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.10.1
+docker pull v0.11.0
 ```
