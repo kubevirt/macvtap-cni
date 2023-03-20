@@ -13,8 +13,8 @@ import (
 
 const (
 	tapPath = "/dev/tap"
-	// Interfaces will be named as <Name><suffix>[0-<Capacity>]
-	suffix = "Mvp"
+	// Interfaces will be named as <prefix>[0-<Capacity>]<Name>
+	prefix = "mvp"
 	// DefaultCapacity is the default when no capacity is provided
 	DefaultCapacity = 100
 	// DefaultMode is the default when no mode is provided
@@ -51,7 +51,7 @@ func (mdp *macvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 	}
 
 	for i := 0; i < capacity; i++ {
-		name := fmt.Sprint(mdp.Name, suffix, i)
+		name := fmt.Sprint(prefix, mdp.Name, i)
 		macvtapDevs = append(macvtapDevs, &pluginapi.Device{
 			ID:     name,
 			Health: pluginapi.Healthy,
