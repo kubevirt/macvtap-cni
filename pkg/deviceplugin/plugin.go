@@ -51,7 +51,7 @@ func (mdp *macvtapDevicePlugin) generateMacvtapDevices() []*pluginapi.Device {
 	}
 
 	for i := 0; i < capacity; i++ {
-		name := fmt.Sprint(prefix, mdp.Name, i)
+		name := fmt.Sprint(prefix, i, mdp.Name)
 		macvtapDevs = append(macvtapDevs, &pluginapi.Device{
 			ID:     name,
 			Health: pluginapi.Healthy,
