@@ -33,8 +33,9 @@ import (
 // A NetConf structure represents a Multus network attachment definition configuration
 type NetConf struct {
 	types.NetConf
-	DeviceID string `json:"deviceID"`
-	MTU      int    `json:"mtu,omitempty"`
+	DeviceID      string `json:"deviceID"`
+	MTU           int    `json:"mtu,omitempty"`
+	IsPromiscuous bool   `json:"promiscMode,omitempty"`
 }
 
 // EnvArgs structure represents inputs sent from each VMI via environment variables
@@ -103,7 +104,7 @@ func CmdAdd(args *skel.CmdArgs) error {
 		}
 	}()
 
-	macvtapInterface, err := util.ConfigureInterface(netConf.DeviceID, args.IfName, mac, netConf.MTU, netns)
+	macvtapInterface, err := util.ConfigureInterface(netConf.DeviceID, args.IfName, mac, netConf.MTU, netConf.IsPromiscuous, netns)
 	if err != nil {
 		return err
 	}

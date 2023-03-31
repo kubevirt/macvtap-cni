@@ -211,5 +211,46 @@ var _ = Describe("Macvtap CNI", func() {
 				})
 			})
 		})
+
+		When("importing a macvtap interface into the target netns with promiscous mode enabled", func() {
+			BeforeEach(func() {
+				promiscousModeArgs := fmt.Sprintf(`{
+				"cniVersion": "0.3.1",
+				"name": "mynet",
+				"type": "macvtap",
+				"deviceID": "%s",
+				"promiscMode": true
+			}`, deviceID)
+				args := &skel.CmdArgs{
+					ContainerID: "dummy",
+					Netns:       targetNs.Path(),
+					IfName:      deviceID,
+					StdinData:   []byte(promiscousModeArgs),
+				}
+
+				originalNS.Do(func(ns.NetNS) error {
+					defer GinkgoRecover()
+
+					_, _, err := testutils.CmdAdd(args.Netns, args.ContainerID, args.IfName, args.StdinData, func() error { return cni.CmdAdd(args) })
+					Expect(err).NotTo(HaveOccurred())
+
+					return nil
+				})
+			})
+
+			It("SHOULD successfully import the macvtap interface into the target netns, having the link promisc mode enabled", func() {
+				// confirm macvtap is available on target namespace, and the correct configurations were applied
+				targetNs.Do(func(ns.NetNS) error {
+					const enabled = 1
+					defer GinkgoRecover()
+
+					link, err := netlink.LinkByName(deviceID)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(link.Attrs().Promisc).To(Equal(enabled))
+
+					return nil
+				})
+			})
+		})
 	})
 })
