@@ -105,6 +105,8 @@ The CNI config json allows the following parameters:
 * `deviceID` (string, required): name of an existing macvtap host interface, which
   will be moved to the correct net namespace and configured. Optional when used within a
   NetworkAttachmentDefinition, as Multus provides the deviceID in that case.
+* `promiscMode` (bool, optional): enable promiscous mode on the pod side of the
+  veth. Defaults to false.
 
 A pod can be attached to that network which would result in the pod having the corresponding
 macvtap interface:

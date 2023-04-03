@@ -227,7 +227,7 @@ func onLinkEvent(match func(netlink.Link) bool, nsPath string, do func(), stop <
 
 // Move an existing macvtap interface from the current netns to the target netns, and rename it..
 // Optionally configure the MAC address of the interface and the link's MTU.
-func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *net.HardwareAddr, mtu int, netns ns.NetNS) (*current.Interface, error) {
+func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *net.HardwareAddr, mtu int, promisc bool, netns ns.NetNS) (*current.Interface, error) {
 	var err error
 
 	macvtapIface, err := netlink.LinkByName(currentIfaceName)
@@ -260,6 +260,12 @@ func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *n
 		if macAddr != nil {
 			if err := netlink.LinkSetHardwareAddr(macvtapIface, *macAddr); err != nil {
 				return fmt.Errorf("failed to add hardware addr to %q: %v", currentIfaceName, err)
+			}
+		}
+
+		if promisc {
+			if err := netlink.SetPromiscOn(macvtapIface); err != nil {
+				return fmt.Errorf("failed to enable promiscous mode on %q: %v", currentIfaceName, err)
 			}
 		}
 
