@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export KUBEVIRT_PROVIDER="${KUBEVIRT_PROVIDER:-k8s-1.24}"
+export KUBEVIRT_PROVIDER="${KUBEVIRT_PROVIDER:-k8s-1.28}"
 export KUBEVIRTCI_TAG=$(curl -L -Ss https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirtci/latest)
 export KUBEVIRTCI_RUNTIME=${OCI_BIN:-docker}
 
