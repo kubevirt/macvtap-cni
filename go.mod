@@ -14,7 +14,7 @@ require (
 	github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852
 	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae
 	golang.org/x/net v0.17.0
-	golang.org/x/tools v0.1.10-0.20220218145154-897bd77cd717
+	golang.org/x/tools v0.6.0
 	google.golang.org/grpc v1.56.3
 	k8s.io/api v0.24.4
 	k8s.io/apimachinery v0.24.4
@@ -56,7 +56,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
 	github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
+	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
@@ -80,7 +80,6 @@ require (
 
 // Pinned to kubernetes-1.24
 replace (
-	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/api => k8s.io/api v0.24.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.24.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.24.4
