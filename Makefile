@@ -55,23 +55,18 @@ format: goimports-format whitespace-format
 
 goimports-check: $(go_sources) $(GO)
 	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
-	touch $@
 
 goimports-format: $(go_sources) $(GO)
 	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
-	touch $@
 
 whitespace-check: $(all_sources) $(GO)
 	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -d ./pkg ./cmd ./tests
-	touch $@
 
 whitespace-format: $(all_sources)
 	$(GO) run ./vendor/golang.org/x/tools/cmd/goimports -w ./pkg ./cmd ./tests
-	touch $@
 
 vet: $(go_sources) $(GO)
 	$(GO) vet ./pkg/... ./cmd/... ./tests/...
-	touch $@
 
 docker-build:
 	$(OCI_BIN) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
@@ -138,4 +133,9 @@ release: $(GITHUB_RELEASE)
 	format \
 	manifests \
 	test/unit \
-	vendor
+	vendor \
+	vet \
+	goimports-check \
+	goimports-format \
+	whitespace-check \
+	whitespace-format
