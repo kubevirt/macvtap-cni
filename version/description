@@ -1,22 +1,19 @@
-v0.11.0
+v0.11.1
 
-This minor release features dependency updates addressing the following
-security issues:
-- https://github.com/kubevirt/macvtap-cni/security/dependabot/3
-- https://github.com/kubevirt/macvtap-cni/security/dependabot/5
-- https://github.com/kubevirt/macvtap-cni/security/dependabot/8
-- https://github.com/kubevirt/macvtap-cni/security/dependabot/4
-
-It also allows the user to template the name of the ConfigMap holding the
-device plugin configuration.
+This release brings a new config knob to enable the link as promisc, along with
+addressing some CVEs.
 
 Features:
-* manifests: template the device plugin config map name
-Dependency updates:
-* build(deps): bump golang.org/x/net
-* build(deps): bump golang.org/x/sys
-* build(deps): bump github.com/emicklei/go-restful
-* ci: bump to kubevirtci k8s-1.24
+- add `promisc` knob - #98
+
+Bugs:
+- address CVE-2021-38561 - #111
+- address CVE-2022-1996 - #112
+
+Dependency bumps:
+- bump golang to 1.19 - #109
+- bump golang.org/x/net to 0.17.0 - #107
+
 ```
-docker pull v0.11.0
+docker pull quay.io/kubevirt/macvtap-cni:v0.11.1
 ```
