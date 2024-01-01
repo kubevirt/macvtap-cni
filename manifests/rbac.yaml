@@ -1,0 +1,27 @@
+# create a service account for the CNI so that it could watch the configmap
+#
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: macvtapdeviceplugin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: macvtap-cm-reader
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["configmaps"]
+  resourceNames: ["macvtap-deviceplugin-config"] #only allow read access to CNI's configmap
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-macvtap-cm
+subjects:
+- kind: ServiceAccount
+  name: macvtapdeviceplugin 
+roleRef:
+  kind: Role 
+  name: macvtap-cm-reader

@@ -23,6 +23,8 @@ func ModeFromString(s string) (netlink.MacvlanMode, error) {
 		return netlink.MACVLAN_MODE_PRIVATE, nil
 	case "vepa":
 		return netlink.MACVLAN_MODE_VEPA, nil
+	case "passthru":
+		return netlink.MACVLAN_MODE_PASSTHRU, nil
 	default:
 		return 0, fmt.Errorf("unknown macvtap mode: %q", s)
 	}
@@ -163,7 +165,6 @@ func OnSuitableMacvtapParentEvent(nsPath string, do func(), stop <-chan struct{}
 // * A first time, after first subscription
 // * Once every re-subscription
 // * On any event matching the predicate
-//
 func onLinkEvent(match func(netlink.Link) bool, nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
 	done := make(chan struct{})
 	defer close(done)
