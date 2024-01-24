@@ -12,15 +12,13 @@ spec:
       labels:
         name: macvtap-cni
     spec:
+      serviceAccountName: macvtapdeviceplugin
       hostNetwork: true
       hostPID: true
       priorityClassName: system-node-critical
       containers:
       - name: macvtap-cni
         command: ["/macvtap-deviceplugin", "-v", "3", "-logtostderr"]
-        envFrom:
-          - configMapRef:
-              name: macvtap-deviceplugin-config
         image: quay.io/kubevirt/macvtap-cni:latest
         imagePullPolicy: Always
         resources:

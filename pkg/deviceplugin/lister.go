@@ -2,17 +2,25 @@ package deviceplugin
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/golang/glog"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/kubevirt/macvtap-cni/pkg/util"
+	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 const (
-	resourceNamespace         = "macvtap.network.kubevirt.io"
-	ConfigEnvironmentVariable = "DP_MACVTAP_CONF"
+	resourceNamespace = "macvtap.network.kubevirt.io"
+	ConfigKey         = "DP_MACVTAP_CONF"
+	ConfigMapName     = "macvtap-deviceplugin-config"
 )
 
 type macvtapConfig struct {
@@ -26,24 +34,34 @@ type macvtapLister struct {
 	Config map[string]macvtapConfig
 	// NetNsPath is the path to the network namespace the lister operates in.
 	NetNsPath string
+	k8sClnt   *kubernetes.Clientset
 }
 
-func NewMacvtapLister(netNsPath string) *macvtapLister {
-	return &macvtapLister{
+func NewMacvtapLister(netNsPath string) (*macvtapLister, error) {
+	lister := &macvtapLister{
 		NetNsPath: netNsPath,
 	}
+	kconfig, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	lister.k8sClnt, err = kubernetes.NewForConfig(kconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return lister, nil
 }
 
 func (ml macvtapLister) GetResourceNamespace() string {
 	return resourceNamespace
 }
 
-func readConfig() (map[string]macvtapConfig, error) {
+func readConfigByStr(cfg string) (map[string]macvtapConfig, error) {
 	var config []macvtapConfig
 	configMap := make(map[string]macvtapConfig)
+	err := json.Unmarshal([]byte(cfg), &config)
 
-	configEnv := os.Getenv(ConfigEnvironmentVariable)
-	err := json.Unmarshal([]byte(configEnv), &config)
 	if err != nil {
 		return configMap, err
 	}
@@ -55,10 +73,10 @@ func readConfig() (map[string]macvtapConfig, error) {
 	return configMap, nil
 }
 
-func discoverByConfig(pluginListCh chan dpm.PluginNameList) (map[string]macvtapConfig, error) {
+func discoverByConfigStr(cfg string, pluginListCh chan dpm.PluginNameList) (map[string]macvtapConfig, error) {
 	var plugins = make(dpm.PluginNameList, 0)
 
-	config, err := readConfig()
+	config, err := readConfigByStr(cfg)
 	if err != nil {
 		glog.Errorf("Error reading config: %v", err)
 		return nil, err
@@ -134,7 +152,32 @@ func discoverByLinks(pluginListCh chan dpm.PluginNameList, netNsPath string) err
 }
 
 func (ml *macvtapLister) Discover(pluginListCh chan dpm.PluginNameList) {
-	config, err := discoverByConfig(pluginListCh)
+	w, err := ml.k8sClnt.CoreV1().ConfigMaps("default").Watch(
+		context.Background(), metav1.ListOptions{
+			FieldSelector: fmt.Sprintf(`metadata.name=%v`, ConfigMapName),
+		})
+	if err != nil {
+		glog.Fatalf("failed to watch configmap %v, %v", ConfigMapName, err)
+		os.Exit(1)
+	}
+	glog.V(3).Infof("start watching config map %v", ConfigMapName)
+	for evt := range w.ResultChan() {
+		switch evt.Type {
+		case watch.Error, watch.Deleted:
+			glog.Warningf("failed to watch configmap %v, got event %+v", ConfigMapName, evt)
+			pluginListCh <- dpm.PluginNameList{}
+		case watch.Added, watch.Modified:
+			if cfg, ok := evt.Object.(*corev1.ConfigMap).Data[ConfigKey]; ok {
+				ml.discovery(cfg, pluginListCh)
+			}
+		}
+
+	}
+	glog.Warning("configmap watch channel closed")
+	os.Exit(1)
+}
+func (ml *macvtapLister) discovery(cfg string, pluginListCh chan dpm.PluginNameList) {
+	config, err := discoverByConfigStr(cfg, pluginListCh)
 	if err != nil {
 		os.Exit(1)
 	}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/golang/glog"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
@@ -20,11 +19,14 @@ func main() {
 	// https://github.com/containernetworking/plugins/blob/master/pkg/ns/README.md
 	mainNsPath := util.GetMainThreadNetNsPath()
 
-	_, configDefined := os.LookupEnv(macvtap.ConfigEnvironmentVariable)
-	if !configDefined {
-		glog.Exitf("%s environment variable must be set", macvtap.ConfigEnvironmentVariable)
+	// _, configDefined := os.LookupEnv(macvtap.ConfigKey)
+	// if !configDefined {
+	// 	glog.Exitf("%s environment variable must be set", macvtap.ConfigKey)
+	// }
+	lister, err := macvtap.NewMacvtapLister(mainNsPath)
+	if err != nil {
+		glog.Fatal(err)
 	}
-
-	manager := dpm.NewManager(macvtap.NewMacvtapLister(mainNsPath))
+	manager := dpm.NewManager(lister)
 	manager.Run()
 }

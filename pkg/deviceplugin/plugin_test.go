@@ -163,10 +163,11 @@ var _ = Describe("Macvtap", func() {
 	Describe("lister", func() {
 		var lister dpm.ListerInterface
 		var pluginListCh chan dpm.PluginNameList
-
+		var err error
 		BeforeEach(func() {
 			pluginListCh = make(chan dpm.PluginNameList)
-			lister = NewMacvtapLister(testNs.Path())
+			lister, err = NewMacvtapLister(testNs.Path())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
@@ -187,11 +188,11 @@ var _ = Describe("Macvtap", func() {
 
 			BeforeEach(func() {
 				config = fmt.Sprintf(config, resourceName, lowerDeviceIfaceName, mode, capacity)
-				os.Setenv(ConfigEnvironmentVariable, config)
+				os.Setenv(ConfigKey, config)
 			})
 
 			AfterEach(func() {
-				os.Unsetenv(ConfigEnvironmentVariable)
+				os.Unsetenv(ConfigKey)
 			})
 
 			It("SHOULD report the appropriate list of resources", func() {
@@ -208,11 +209,11 @@ var _ = Describe("Macvtap", func() {
 
 		Context("WHEN provided an empty configuration", func() {
 			BeforeEach(func() {
-				os.Setenv(ConfigEnvironmentVariable, "[]")
+				os.Setenv(ConfigKey, "[]")
 			})
 
 			AfterEach(func() {
-				os.Unsetenv(ConfigEnvironmentVariable)
+				os.Unsetenv(ConfigKey)
 			})
 
 			It("SHOULD update the list of available resources", func() {
