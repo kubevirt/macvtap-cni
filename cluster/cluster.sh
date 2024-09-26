@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export KUBEVIRT_PROVIDER="${KUBEVIRT_PROVIDER:-k8s-1.28}"
-export KUBEVIRTCI_TAG=2408151028-a0ad3359
+export KUBEVIRT_PROVIDER=${KUBEVIRT_PROVIDER:-k8s-1.28}
+export KUBEVIRTCI_TAG=${KUBEVIRTCI_TAG:-2408151028-a0ad3359}
 export KUBEVIRTCI_RUNTIME=${OCI_BIN:-docker}
 
 KUBEVIRTCI_REPO='https://github.com/kubevirt/kubevirtci.git'
