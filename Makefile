@@ -30,7 +30,7 @@ go_sources=$(call rwildcard,cmd/,*.go) $(call rwildcard,pkg/,*.go) $(call rwildc
 
 # Configure Go
 export GOOS=linux
-export GOARCH=amd64
+export GOARCH=$(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 export CGO_ENABLED=0
 export GO111MODULE=on
 export GOFLAGS=-mod=vendor
@@ -69,7 +69,7 @@ vet: $(go_sources) $(GO)
 	$(GO) vet ./pkg/... ./cmd/... ./tests/...
 
 docker-build:
-	$(OCI_BIN) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
+	$(OCI_BIN) build --build-arg goarch=${GOARCH} -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
 
 docker-push:
 ifeq ($(OCI_BIN),podman)
