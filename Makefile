@@ -19,6 +19,18 @@ OCI_BIN ?= docker
 
 # tools
 GITHUB_RELEASE ?= $(GOBIN)/github-release
+PLATFORM_LIST ?= linux/amd64,linux/s390x,linux/arm64
+ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+PLATFORMS ?= linux/${ARCH}
+PLATFORMS := $(if $(filter all,$(PLATFORMS)),$(PLATFORM_LIST),$(PLATFORMS))
+# Set the platforms for building a multi-platform supported image.
+# Example:
+# PLATFORMS ?= linux/amd64,linux/arm64,linux/s390x
+# Alternatively, you can export the PLATFORMS variable like this:
+# export PLATFORMS=linux/arm64,linux/s390x,linux/amd64
+# or export PLATFORMS=all to automatically include all supported platforms.
+DOCKER_BUILDER ?= macvtap-docker-builder
+MACVTAP_IMAGE_TAGGED := ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
@@ -30,7 +42,7 @@ go_sources=$(call rwildcard,cmd/,*.go) $(call rwildcard,pkg/,*.go) $(call rwildc
 
 # Configure Go
 export GOOS=linux
-export GOARCH=amd64
+export GOARCH=$(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 export CGO_ENABLED=0
 export GO111MODULE=on
 export GOFLAGS=-mod=vendor
@@ -69,17 +81,21 @@ vet: $(go_sources) $(GO)
 	$(GO) vet ./pkg/... ./cmd/... ./tests/...
 
 docker-build:
-	$(OCI_BIN) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./cmd/Dockerfile .
+ifeq ($(OCI_BIN),podman)
+	$(MAKE) build-multiarch-macvtap-podman
+else ifeq ($(OCI_BIN),docker)
+	$(MAKE) build-multiarch-macvtap-docker
+else
+	$(error Unsupported OCI_BIN value: $(OCI_BIN))
+endif
 
 docker-push:
 ifeq ($(OCI_BIN),podman)
-	$(OCI_BIN) push --tls-verify=false ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-else
-	$(OCI_BIN) push ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+	podman manifest push --tls-verify=false ${MACVTAP_IMAGE_TAGGED} ${MACVTAP_IMAGE_TAGGED}
 endif
 
 docker-tag-latest:
-	$(OCI_BIN) tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+	$(OCI_BIN) tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest ${MACVTAP_IMAGE_TAGGED}
 
 cluster-up:
 	./cluster/up.sh
@@ -122,8 +138,16 @@ release: docker-build docker-push
 release: $(GITHUB_RELEASE)
 	TAG=$(IMAGE_TAG) GITHUB_RELEASE=$(GITHUB_RELEASE) DESCRIPTION=./version/description ./hack/release.sh
 
+build-multiarch-macvtap-docker:
+	PLATFORMS=$(PLATFORMS) MACVTAP_IMAGE_TAGGED=$(MACVTAP_IMAGE_TAGGED) DOCKER_BUILDER=$(DOCKER_BUILDER) ./hack/build-macvtap-docker.sh
+
+build-multiarch-macvtap-podman:
+	PLATFORMS=$(PLATFORMS) MACVTAP_IMAGE_TAGGED=$(MACVTAP_IMAGE_TAGGED) ./hack/build-macvtap-podman.sh
+
 .PHONY: \
 	all \
+	build-multiarch-macvtap-docker \
+	build-multiarch-macvtap-podman \
 	check \
 	cluster-up \
 	cluster-down \
