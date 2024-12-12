@@ -11,6 +11,7 @@
 source automation/check-patch.setup.sh
 cd ${TMP_PROJECT_PATH}
 
+export PLATFORMS=all
 IMAGE_TAG=${IMAGE_TAG:-$(git log -1 --pretty=%h)-$(date +%s)}
 make docker-build 
 make docker-tag-latest
