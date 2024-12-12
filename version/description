@@ -1,19 +1,12 @@
-v0.11.1
-
-This release brings a new config knob to enable the link as promisc, along with
-addressing some CVEs.
+v0.12.0
 
 Features:
-- add `promisc` knob - #98
-
-Bugs:
-- address CVE-2021-38561 - #111
-- address CVE-2022-1996 - #112
-
-Dependency bumps:
-- bump golang to 1.19 - #109
-- bump golang.org/x/net to 0.17.0 - #107
+* Add multi-platform support for macvtap cni image builds.
+* cluster: Allow overriding kubevirtci params
+* cluster: Pin kubevirtci tag
+* feat: add snyk file to exclude vendor folders
+* build: use golang 1.20
 
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.11.1
+docker pull quay.io/kubevirt/macvtap-cni:v0.12.0
 ```
