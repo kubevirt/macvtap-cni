@@ -11,6 +11,7 @@ podman manifest rm "${MACVTAP_IMAGE_TAGGED}" 2>/dev/null || true
 podman manifest rm "${MARKER_IMAGE_GIT_TAGGED}" 2>/dev/null || true
 podman rmi "${MACVTAP_IMAGE_TAGGED}" 2>/dev/null || true
 podman rmi "${MARKER_IMAGE_GIT_TAGGED}" 2>/dev/null || true
+podman rmi $(podman images --filter "dangling=true" -q) 2>/dev/null || true
 
 podman manifest create "${MACVTAP_IMAGE_TAGGED}"
 

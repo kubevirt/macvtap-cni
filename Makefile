@@ -30,7 +30,6 @@ PLATFORMS := $(if $(filter all,$(PLATFORMS)),$(PLATFORM_LIST),$(PLATFORMS))
 # export PLATFORMS=linux/arm64,linux/s390x,linux/amd64
 # or export PLATFORMS=all to automatically include all supported platforms.
 DOCKER_BUILDER ?= macvtap-docker-builder
-MACVTAP_IMAGE_TAGGED := ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
@@ -82,20 +81,20 @@ vet: $(go_sources) $(GO)
 
 docker-build:
 ifeq ($(OCI_BIN),podman)
-	$(MAKE) build-multiarch-macvtap-podman
+	$(MAKE) build-multiarch-macvtap-podman MACVTAP_IMAGE_TAGGED=$(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 else ifeq ($(OCI_BIN),docker)
-	$(MAKE) build-multiarch-macvtap-docker
+	$(MAKE) build-multiarch-macvtap-docker MACVTAP_IMAGE_TAGGED=$(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 else
 	$(error Unsupported OCI_BIN value: $(OCI_BIN))
 endif
 
 docker-push:
 ifeq ($(OCI_BIN),podman)
-	podman manifest push --tls-verify=false ${MACVTAP_IMAGE_TAGGED} ${MACVTAP_IMAGE_TAGGED}
+	podman manifest push --tls-verify=false $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 endif
 
 docker-tag-latest:
-	$(OCI_BIN) tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest ${MACVTAP_IMAGE_TAGGED}
+	$(OCI_BIN) tag ${IMAGE_REGISTRY}/${IMAGE_NAME}:latest $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 
 cluster-up:
 	./cluster/up.sh
