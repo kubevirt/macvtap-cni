@@ -6,7 +6,7 @@ require (
 	github.com/aktau/github-release v0.8.1
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
-	github.com/golang/glog v1.1.0
+	github.com/golang/glog v1.2.4
 	github.com/kubevirt/device-plugin-manager v1.19.4
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.23.0
