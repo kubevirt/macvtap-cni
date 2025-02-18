@@ -6,7 +6,7 @@ require (
 	github.com/aktau/github-release v0.8.1
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
-	github.com/golang/glog v1.1.0
+	github.com/golang/glog v1.2.4
 	github.com/kubevirt/device-plugin-manager v1.19.4
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.23.0
@@ -37,7 +37,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1 // indirect
