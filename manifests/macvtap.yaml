@@ -33,6 +33,22 @@ spec:
           - name: deviceplugin
             mountPath: /var/lib/kubelet/device-plugins
         terminationMessagePolicy: FallbackToLogsOnError
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -S /var/lib/kubelet/device-plugins/macvtap.network.kubevirt.io*
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -S /var/lib/kubelet/device-plugins/macvtap.network.kubevirt.io*
+          initialDelaySeconds: 15
+          periodSeconds: 60
       initContainers:
       - name: install-cni
         command: ["cp", "/macvtap-cni", "/host/opt/cni/bin/macvtap"]
