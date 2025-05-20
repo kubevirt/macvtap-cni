@@ -1,7 +1,19 @@
-v0.12.2
+v0.13.0
+This release adds probes and TerminationMessagePolicy to the macvtap-cni
+components, thus complying with the operator's best practices.
 
+It also fixes some CVEs:
+- 2024-45338
+- 2024-45339
+
+Features:
+* Merge pull request #138 from qinqon/add-probes
+* manifests: Add probes checking device plugin socket
+* Merge pull request #136 from RamLavi/add_term_msg_policy
+* Set container's TerminationMessagePolicy to FallbackToLogsOnError
 Bugs:
-* Construct the image name directly within the build target
+* build, CVE-2024-45339: bump glog to v1.2.4
+* build, cve: fix cve-2024-45338
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.12.2
+docker pull quay.io/kubevirt/macvtap-cni:v0.13.0
 ```
