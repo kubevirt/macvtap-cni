@@ -5,6 +5,7 @@ set -ex
 source ./cluster/cluster.sh
 cluster::install
 
+export KUBEVIRT_WITH_CNAO=true
 export KUBVIRT_WITH_CNAO_SKIP_CONFIG=true
 $(cluster::path)/cluster-up/up.sh
 
