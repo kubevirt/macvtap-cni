@@ -130,7 +130,7 @@ var _ = Describe("macvtap-cni", func() {
 
 				container := v1.Container{
 					Name:    containerName,
-					Image:   "alpine",
+					Image:   "docker.io/library/alpine:latest",
 					Command: []string{"/bin/sh", "-c", "sleep 999999"},
 					Resources: v1.ResourceRequirements{
 						Limits: buildMacvtapResourceRequest(lowerDevice, 1),
