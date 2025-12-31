@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/vishvananda/netlink"
@@ -163,7 +164,6 @@ func OnSuitableMacvtapParentEvent(nsPath string, do func(), stop <-chan struct{}
 // * A first time, after first subscription
 // * Once every re-subscription
 // * On any event matching the predicate
-//
 func onLinkEvent(match func(netlink.Link) bool, nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
 	done := make(chan struct{})
 	defer close(done)
@@ -284,6 +284,12 @@ func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *n
 		macvtapIface, err = netlink.LinkByName(newIfaceName)
 		if err != nil {
 			return err
+		}
+
+		// fix ownership of /dev/tapX
+		pathToTap := filepath.Join("/dev", fmt.Sprintf("tap%d", macvtapIface.Attrs().Index))
+		if err := os.Chown(pathToTap, 107, 107); err != nil {
+			return fmt.Errorf("failed to change ownership of tap device %s for iface %s because: %v", pathToTap, macvtapIface, err)
 		}
 
 		macvtap = &current.Interface{
