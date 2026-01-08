@@ -30,12 +30,19 @@ import (
 	"github.com/containernetworking/plugins/pkg/ns"
 )
 
+const (
+	KubevirtQemuUID = 107
+	KubevirtQemuGID = 107
+)
+
 // A NetConf structure represents a Multus network attachment definition configuration
 type NetConf struct {
 	types.NetConf
 	DeviceID      string `json:"deviceID"`
 	MTU           int    `json:"mtu,omitempty"`
 	IsPromiscuous bool   `json:"promiscMode,omitempty"`
+	Owner         int    `json:"owner,omitempty"`
+	Group         int    `json:"group,omitempty"`
 }
 
 // EnvArgs structure represents inputs sent from each VMI via environment variables
@@ -52,7 +59,11 @@ func init() {
 }
 
 func loadConf(bytes []byte) (NetConf, string, error) {
-	n := NetConf{}
+	// Set defaults to match qemu user from kubevirt images
+	n := NetConf{
+		Owner: KubevirtQemuUID,
+		Group: KubevirtQemuGID,
+	}
 	if err := json.Unmarshal(bytes, &n); err != nil {
 		return n, "", fmt.Errorf("failed to load netconf: %v", err)
 	}
@@ -104,7 +115,7 @@ func CmdAdd(args *skel.CmdArgs) error {
 		}
 	}()
 
-	macvtapInterface, err := util.ConfigureInterface(netConf.DeviceID, args.IfName, mac, netConf.MTU, netConf.IsPromiscuous, netns)
+	macvtapInterface, err := util.ConfigureInterface(netConf.DeviceID, args.IfName, mac, netConf.MTU, netConf.IsPromiscuous, netConf.Owner, netConf.Group, netns)
 	if err != nil {
 		return err
 	}

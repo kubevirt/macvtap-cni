@@ -113,6 +113,8 @@ test/unit: $(GO)
 		@echo "You are not root, run this target as root please"
 		exit 1
 	fi
+	# mount dynamic /dev to see new /dev/tapXX files (containers use static tmpfs /dev)
+	[ "$$(findmnt -n -o FSTYPE /dev)" != devtmpfs ] && mount -t devtmpfs none /dev
 	$(GO) test ./cmd/... ./pkg/... -v --ginkgo.v
 
 manifests:

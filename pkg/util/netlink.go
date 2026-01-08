@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/vishvananda/netlink"
@@ -163,7 +164,6 @@ func OnSuitableMacvtapParentEvent(nsPath string, do func(), stop <-chan struct{}
 // * A first time, after first subscription
 // * Once every re-subscription
 // * On any event matching the predicate
-//
 func onLinkEvent(match func(netlink.Link) bool, nsPath string, do func(), stop <-chan struct{}, errcb func(error)) {
 	done := make(chan struct{})
 	defer close(done)
@@ -227,7 +227,7 @@ func onLinkEvent(match func(netlink.Link) bool, nsPath string, do func(), stop <
 
 // Move an existing macvtap interface from the current netns to the target netns, and rename it..
 // Optionally configure the MAC address of the interface and the link's MTU.
-func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *net.HardwareAddr, mtu int, promisc bool, netns ns.NetNS) (*current.Interface, error) {
+func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *net.HardwareAddr, mtu int, promisc bool, owner int, group int, netns ns.NetNS) (*current.Interface, error) {
 	var err error
 
 	macvtapIface, err := netlink.LinkByName(currentIfaceName)
@@ -284,6 +284,12 @@ func ConfigureInterface(currentIfaceName string, newIfaceName string, macAddr *n
 		macvtapIface, err = netlink.LinkByName(newIfaceName)
 		if err != nil {
 			return err
+		}
+
+		// set ownership of /dev/tapX
+		pathToTap := filepath.Join("/dev", fmt.Sprintf("tap%d", macvtapIface.Attrs().Index))
+		if err := os.Chown(pathToTap, owner, group); err != nil {
+			return fmt.Errorf("failed to change ownership of tap device %s for iface %s to %d:%d because: %v", pathToTap, newIfaceName, owner, group, err)
 		}
 
 		macvtap = &current.Interface{
