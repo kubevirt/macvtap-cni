@@ -1,6 +1,7 @@
 package deviceplugin
 
 import (
+	"crypto/md5"
 	"fmt"
 
 	"github.com/containernetworking/plugins/pkg/ns"
@@ -111,6 +112,13 @@ func (mdp *macvtapDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Dev
 	return nil
 }
 
+// shortIfaceName returns a deterministic interface name that fits within
+// the Linux IFNAMSIZ limit (15 chars).
+func shortIfaceName(deviceID string) string {
+	h := md5.Sum([]byte(deviceID))
+	return fmt.Sprintf("mvt%x", h[:6])
+}
+
 func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	var response pluginapi.AllocateResponse
 
@@ -118,6 +126,7 @@ func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 		var devices []*pluginapi.DeviceSpec
 		for _, name := range req.DevicesIDs {
 			dev := new(pluginapi.DeviceSpec)
+			ifaceName := shortIfaceName(name)
 
 			// There is a possibility the interface already exists from a
 			// previous allocation. In a typical scenario, macvtap interfaces
@@ -130,7 +139,7 @@ func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 			var index int
 			err := ns.WithNetNSPath(mdp.NetNsPath, func(_ ns.NetNS) error {
 				var err error
-				index, err = util.RecreateMacvtap(name, mdp.LowerDevice, mdp.Mode)
+				index, err = util.RecreateMacvtap(ifaceName, mdp.LowerDevice, mdp.Mode)
 				return err
 			})
 			if err != nil {

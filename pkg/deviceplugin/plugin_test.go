@@ -103,12 +103,12 @@ var _ = Describe("Macvtap", func() {
 		})
 
 		It("should allocate a new device upon request", func() {
-			ifaceName := lowerDeviceIfaceName + "Mvp99"
+			deviceID := lowerDeviceIfaceName + "Mvp99"
 			req := &pluginapi.AllocateRequest{
 				ContainerRequests: []*pluginapi.ContainerAllocateRequest{
 					{
 						DevicesIDs: []string{
-							ifaceName,
+							deviceID,
 						},
 					},
 				},
@@ -117,10 +117,11 @@ var _ = Describe("Macvtap", func() {
 			res, err := mvdp.Allocate(nil, req)
 			Expect(err).NotTo(HaveOccurred())
 
+			expectedIfaceName := shortIfaceName(deviceID)
 			var iface netlink.Link
 			err = testNs.Do(func(ns ns.NetNS) error {
 				var err error
-				iface, err = netlink.LinkByName(ifaceName)
+				iface, err = netlink.LinkByName(expectedIfaceName)
 				return err
 			})
 			Expect(err).NotTo(HaveOccurred())
