@@ -1,6 +1,9 @@
 # github.com/aktau/github-release v0.8.1
 ## explicit
 github.com/aktau/github-release
+# github.com/cespare/xxhash/v2 v2.2.0
+## explicit; go 1.11
+github.com/cespare/xxhash/v2
 # github.com/containernetworking/cni v0.8.1
 ## explicit
 github.com/containernetworking/cni/pkg/skel

@@ -117,7 +117,7 @@ var _ = Describe("Macvtap", func() {
 			res, err := mvdp.Allocate(nil, req)
 			Expect(err).NotTo(HaveOccurred())
 
-			expectedIfaceName := shortIfaceName(deviceID)
+			expectedIfaceName := util.TemporaryInterfaceName(deviceID)
 			var iface netlink.Link
 			err = testNs.Do(func(ns ns.NetNS) error {
 				var err error

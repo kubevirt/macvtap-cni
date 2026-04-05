@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/aktau/github-release v0.8.1
+	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
 	github.com/golang/glog v1.2.4

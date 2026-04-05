@@ -108,14 +108,18 @@ func CmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// Delete link if err to avoid link leak in this ns
+	if netConf.DeviceID == "" {
+		return fmt.Errorf("deviceID is required")
+	}
+	tempIfaceName := util.TemporaryInterfaceName(netConf.DeviceID)
 	defer func() {
 		netns.Close()
 		if err != nil {
-			util.LinkDelete(netConf.DeviceID)
+			util.LinkDelete(tempIfaceName)
 		}
 	}()
 
-	macvtapInterface, err := util.ConfigureInterface(netConf.DeviceID, args.IfName, mac, netConf.MTU, netConf.IsPromiscuous, netConf.Owner, netConf.Group, netns)
+	macvtapInterface, err := util.ConfigureInterface(tempIfaceName, args.IfName, mac, netConf.MTU, netConf.IsPromiscuous, netConf.Owner, netConf.Group, netns)
 	if err != nil {
 		return err
 	}
