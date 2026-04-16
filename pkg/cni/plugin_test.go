@@ -24,6 +24,7 @@ var _ = Describe("Macvtap CNI", func() {
 		var stdInArgs string
 
 		deviceID := "dev500"
+		tempIfaceName := util.TemporaryInterfaceName(deviceID)
 		macvtapIfaceName := "macvtap0"
 
 		BeforeEach(func() {
@@ -49,11 +50,11 @@ var _ = Describe("Macvtap CNI", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// create macvtap on top of lower device
-				_, err = util.CreateMacvtap(deviceID, LOWER_DEVICE, "bridge")
+				_, err = util.CreateMacvtap(tempIfaceName, LOWER_DEVICE, "bridge")
 				Expect(err).NotTo(HaveOccurred())
 
 				// cache the macvtap interface
-				macvtapInterface, err = netlink.LinkByName(deviceID)
+				macvtapInterface, err = netlink.LinkByName(tempIfaceName)
 				Expect(err).NotTo(HaveOccurred())
 
 				stdInArgs = fmt.Sprintf(`{

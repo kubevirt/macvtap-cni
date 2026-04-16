@@ -118,6 +118,7 @@ func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 		var devices []*pluginapi.DeviceSpec
 		for _, name := range req.DevicesIDs {
 			dev := new(pluginapi.DeviceSpec)
+			ifaceName := util.TemporaryInterfaceName(name)
 
 			// There is a possibility the interface already exists from a
 			// previous allocation. In a typical scenario, macvtap interfaces
@@ -130,7 +131,7 @@ func (mdp *macvtapDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Alloc
 			var index int
 			err := ns.WithNetNSPath(mdp.NetNsPath, func(_ ns.NetNS) error {
 				var err error
-				index, err = util.RecreateMacvtap(name, mdp.LowerDevice, mdp.Mode)
+				index, err = util.RecreateMacvtap(ifaceName, mdp.LowerDevice, mdp.Mode)
 				return err
 			})
 			if err != nil {
