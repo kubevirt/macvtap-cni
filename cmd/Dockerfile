@@ -1,6 +1,6 @@
 # Multi-stage dockerfile building a container image with both binaries included
 
-FROM --platform=$BUILDPLATFORM quay.io/projectquay/golang:1.20 AS builder
+FROM --platform=$BUILDPLATFORM quay.io/projectquay/golang:1.25 AS builder
 ENV GOPATH=/go
 WORKDIR /go/src/github.com/kubevirt/macvtap-cni
 ARG TARGETOS

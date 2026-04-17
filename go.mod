@@ -1,6 +1,6 @@
 module github.com/kubevirt/macvtap-cni
 
-go 1.20
+go 1.25
 
 require (
 	github.com/aktau/github-release v0.8.1
