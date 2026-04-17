@@ -12,12 +12,13 @@ export PATH=${GOPATH}/bin:${GOROOT}/bin:${PATH}
 export GOBIN=${GOROOT}/bin/
 mkdir -p $GOBIN
 
-echo 'Install Go 1.25'
-export GIMME_GO_VERSION=1.25
-GIMME=/tmp/macvtap-cni/go/gimme
-mkdir -p $GIMME
-curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | HOME=${GIMME} bash >> ${GIMME}/gimme.sh
-source ${GIMME}/gimme.sh
+GO_VERSION=$(grep "^go " go.mod | awk '{print $2}')
+echo "Install Go ${GO_VERSION}"
+ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+curl -sL https://dl.google.com/go/go${GO_VERSION}.linux-${ARCH}.tar.gz | tar -xz -C /tmp/macvtap-cni/go
+export GOROOT=/tmp/macvtap-cni/go/go
+export GOBIN=${GOROOT}/bin/
+export PATH=${GOBIN}:${GOPATH}/bin:${PATH}
 
 echo 'Install operator repository under the temporary Go path'
 TMP_PROJECT_PATH=${GOPATH}/src/github.com/kubevirt/macvtap-cni
