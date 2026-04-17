@@ -1,5 +1,5 @@
-//go:build windows && !appengine
-// +build windows,!appengine
+// +build windows
+// +build !appengine
 
 package colorable
 
@@ -452,21 +452,17 @@ func (w *Writer) Write(data []byte) (n int, err error) {
 	} else {
 		er = bytes.NewReader(data)
 	}
-	var plaintext bytes.Buffer
+	var bw [1]byte
 loop:
 	for {
 		c1, err := er.ReadByte()
 		if err != nil {
-			plaintext.WriteTo(w.out)
 			break loop
 		}
 		if c1 != 0x1b {
-			plaintext.WriteByte(c1)
+			bw[0] = c1
+			w.out.Write(bw[:])
 			continue
-		}
-		_, err = plaintext.WriteTo(w.out)
-		if err != nil {
-			break loop
 		}
 		c2, err := er.ReadByte()
 		if err != nil {
@@ -723,7 +719,7 @@ loop:
 									n256setup()
 								}
 								attr &= backgroundMask
-								attr |= n256foreAttr[n256%len(n256foreAttr)]
+								attr |= n256foreAttr[n256]
 								i += 2
 							}
 						} else if len(token) == 5 && token[i+1] == "2" {
@@ -765,7 +761,7 @@ loop:
 									n256setup()
 								}
 								attr &= foregroundMask
-								attr |= n256backAttr[n256%len(n256backAttr)]
+								attr |= n256backAttr[n256]
 								i += 2
 							}
 						} else if len(token) == 5 && token[i+1] == "2" {

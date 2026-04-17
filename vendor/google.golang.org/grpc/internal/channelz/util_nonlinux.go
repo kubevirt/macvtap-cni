@@ -1,7 +1,9 @@
-//go:build !unix && !windows
+//go:build !linux
+// +build !linux
 
 /*
- * Copyright 2023 gRPC authors.
+ *
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +19,9 @@
  *
  */
 
-package internal
+package channelz
 
-import (
-	"net"
-)
-
-// NetDialerWithTCPKeepalive returns a vanilla net.Dialer on non-unix platforms.
-func NetDialerWithTCPKeepalive() *net.Dialer {
-	return &net.Dialer{}
+// GetSocketOption gets the socket option info of the conn.
+func GetSocketOption(c interface{}) *SocketOptionData {
+	return nil
 }
