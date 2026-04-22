@@ -38,7 +38,7 @@ spec:
             command:
             - sh
             - -c
-            - test -S /var/lib/kubelet/device-plugins/macvtap.network.kubevirt.io*
+            - ls /var/lib/kubelet/device-plugins/macvtap.network.kubevirt.io* >/dev/null 2>&1
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
@@ -46,7 +46,7 @@ spec:
             command:
             - sh
             - -c
-            - test -S /var/lib/kubelet/device-plugins/macvtap.network.kubevirt.io*
+            - ls /var/lib/kubelet/device-plugins/macvtap.network.kubevirt.io* >/dev/null 2>&1
           initialDelaySeconds: 15
           periodSeconds: 60
       initContainers:
