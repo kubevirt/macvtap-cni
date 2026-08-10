@@ -1,10 +1,17 @@
-v0.13.1
-Patch release containing a fix which enables the correct ownership of the
-`/dev/tapXX` character device.
+v0.13.2
+
+New macvtap-cni release, focusing on CVEs.
+No feature development happened since 0.13.1
 
 Bugs:
-* Merge pull request #144 from skazi0/tap-owner-fix
-* Set /dev/tapXX owner/group
+* fix: use ls instead of test -S in DaemonSet probes
+* build(deps): bump google.golang.org/grpc from 1.56.3 to 1.79.3
+* fix: use full three-part Go version in go.mod
+* fix: replace gimme with direct Go download in CI setup
+* bump: golang 1.20 -> 1.25
+* fix: align CNI temp iface naming
+* fix: temporary interface name (before moving into pod) is generated from a hash to ensure it's always short enough to fit into a linux interface name
+
 ```
-docker pull quay.io/kubevirt/macvtap-cni:v0.13.1
+docker pull quay.io/kubevirt/macvtap-cni:v0.13.2
 ```
