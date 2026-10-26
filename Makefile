@@ -8,6 +8,10 @@ IMAGE_TAG ?= latest
 
 NAMESPACE ?= default
 
+# Manifests attached to each GitHub release. They pin the image to the release
+# tag, unlike manifests/ on main, which follows the latest image.
+RELEASE_MANIFESTS_DIR ?= _out/release-manifests
+
 TARGETS = \
 	goimports-format \
 	goimports-check \
@@ -134,10 +138,15 @@ prepare-major:
 $(GITHUB_RELEASE): go.mod $(GO)
 	$(GO) install ./vendor/github.com/aktau/github-release
 
+release-manifests: IMAGE_TAG = $(shell hack/version.sh)
+release-manifests:
+	mkdir -p $(RELEASE_MANIFESTS_DIR)
+	DESTINATION=$(RELEASE_MANIFESTS_DIR) $(MAKE) manifests IMAGE_TAG=$(IMAGE_TAG) IMAGE_PULL_POLICY=IfNotPresent
+
 release: IMAGE_TAG = $(shell hack/version.sh)
-release: docker-build docker-push
+release: docker-build docker-push release-manifests
 release: $(GITHUB_RELEASE)
-	TAG=$(IMAGE_TAG) GITHUB_RELEASE=$(GITHUB_RELEASE) DESCRIPTION=./version/description ./hack/release.sh
+	TAG=$(IMAGE_TAG) GITHUB_RELEASE=$(GITHUB_RELEASE) DESCRIPTION=./version/description ./hack/release.sh $(RELEASE_MANIFESTS_DIR)/macvtap.yaml
 
 build-multiarch-macvtap-docker:
 	PLATFORMS=$(PLATFORMS) MACVTAP_IMAGE_TAGGED=$(MACVTAP_IMAGE_TAGGED) DOCKER_BUILDER=$(DOCKER_BUILDER) ./hack/build-macvtap-docker.sh
@@ -157,6 +166,7 @@ build-multiarch-macvtap-podman:
 	docker-push \
 	format \
 	manifests \
+	release-manifests \
 	test/unit \
 	vendor \
 	vet \

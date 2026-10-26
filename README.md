@@ -73,6 +73,23 @@ macvtap-cni-745x4                      1/1    Running           0    5m
 This will result in the CNI being installed and device plugin running on all
 nodes.
 
+The manifest on `main` uses the `latest` image with `imagePullPolicy: Always`,
+so nodes can end up running different builds. To install a specific release,
+use the `macvtap.yaml` attached to that
+[GitHub release](https://github.com/kubevirt/macvtap-cni/releases) instead. It
+pins the image to the release tag and uses `imagePullPolicy: IfNotPresent`:
+
+```
+$ kubectl apply -f https://github.com/kubevirt/macvtap-cni/releases/download/<version>/macvtap.yaml
+```
+
+Releases up to v0.13.2 do not have this file attached. For those, render the
+manifest from the template with the release tag:
+
+```
+$ mkdir -p _out && DESTINATION=_out make manifests IMAGE_TAG=v0.13.2 IMAGE_PULL_POLICY=IfNotPresent
+```
+
 There is also a [template](templates/macvtap.yaml.in) available to parameterize
 the deployment with different configuration options.
 
