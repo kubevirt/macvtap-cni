@@ -19,7 +19,7 @@ OCI_BIN ?= docker
 
 # tools
 GITHUB_RELEASE ?= $(GOBIN)/github-release
-PLATFORM_LIST ?= linux/amd64,linux/s390x,linux/arm64
+PLATFORM_LIST ?= linux/amd64,linux/s390x,linux/arm64,linux/ppc64le
 ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 PLATFORMS ?= linux/${ARCH}
 PLATFORMS := $(if $(filter all,$(PLATFORMS)),$(PLATFORM_LIST),$(PLATFORMS))

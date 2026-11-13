@@ -26,8 +26,9 @@ create_or_use_buildx_builder() {
   if ! grep -q "^Driver: docker$" <<<"${current_builder}" && \
      grep -q "linux/amd64" <<<"${current_builder}" && \
      grep -q "linux/arm64" <<<"${current_builder}" && \
-     grep -q "linux/s390x" <<<"${current_builder}"; then
-    echo "The current builder already has multi-architecture support (amd64, arm64, s390x)."
+     grep -q "linux/s390x" <<<"${current_builder}" && \
+     grep -q "linux/ppc64le" <<<"${current_builder}"; then
+    echo "The current builder already has multi-architecture support (amd64, arm64, s390x, ppc64le)."
     echo "Skipping setup as the builder is already configured correctly."
     exit 0
   fi
